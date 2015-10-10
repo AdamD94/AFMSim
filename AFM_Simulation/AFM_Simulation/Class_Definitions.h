@@ -7,15 +7,19 @@ public:
 	double r[3];
 	double radius;
 	double m;
+	double epsilon;
+	double sigma;
 	Atom* Next;
 
-	Atom(double x_in, double y_in, double z_in, double radius_in, double m_in)
+	Atom(double x_in, double y_in, double z_in, double radius_in, double m_in, double epsilon_in, double sigma_in)
 	{
 		r[0] = x_in;
 		r[1] = y_in;
 		r[2] = z_in;
 		radius = radius_in;
 		m = m_in;
+		epsilon = epsilon_in;
+		sigma = sigma_in;
 		Next = NULL;
 	}
 
@@ -24,9 +28,19 @@ public:
 		cout << r[0] << " " << r[1] << " " << r[2] << " " << radius <<" "<< m << endl;
 	}
 
+	void Print(double force)
+	{
+		cout << r[0] << " " << r[1] << " " << r[2] << " " << radius << " " << m << " " << force << endl;
+	}
+
 	void Print(int lattice, int atom)
 	{
 		cout << r[0] << " " << r[1] << " " << r[2] << " " << radius << " " << m << " " <<lattice<<" "<<atom<< endl;
+	}
+
+	double LJForce(Atom* Other_Atom)
+	{
+		return(0);
 	}
 
 };
@@ -65,29 +79,38 @@ public:
 	{
 		if (first_atom == NULL)
 		{
-			first_atom = new Atom(Atom_in.r[0] + r[0], Atom_in.r[1] + r[1], Atom_in.r[2] + r[2], Atom_in.radius, Atom_in.m);
+			first_atom = new Atom(Atom_in.r[0] + r[0], Atom_in.r[1] + r[1], Atom_in.r[2] + r[2], Atom_in.radius, Atom_in.m, Atom_in.epsilon, Atom_in.sigma);
 		}
 		else
 		{
-			first_atom->Next = new Atom(Atom_in.r[0] + r[0], Atom_in.r[1] + r[1], Atom_in.r[2] + r[2], Atom_in.radius, Atom_in.m);
+			first_atom->Next = new Atom(Atom_in.r[0] + r[0], Atom_in.r[1] + r[1], Atom_in.r[2] + r[2], Atom_in.radius, Atom_in.m, Atom_in.epsilon, Atom_in.sigma);
 		}
-		//Give atoms absolute coordinates by adding displacement of current cell from the origin.
-
 	}
 
 	void Add_Atom(Atom* Atom_in)
 	{
 		if (first_atom == NULL)
 		{
-			first_atom = new Atom(Atom_in->r[0] + r[0], Atom_in->r[1] + r[1], Atom_in->r[2] + r[2], Atom_in->radius, Atom_in->m);
+			first_atom = new Atom(Atom_in->r[0] + r[0], Atom_in->r[1] + r[1], Atom_in->r[2] + r[2], Atom_in->radius, Atom_in->m, Atom_in->epsilon, Atom_in->sigma);
 		}
 		else
 		{
-			first_atom->Next = new Atom(Atom_in->r[0] + r[0], Atom_in->r[1] + r[1], Atom_in->r[2] + r[2], Atom_in->radius, Atom_in->m);
+			first_atom->Next = new Atom(Atom_in->r[0] + r[0], Atom_in->r[1] + r[1], Atom_in->r[2] + r[2], Atom_in->radius, Atom_in->m, Atom_in->epsilon, Atom_in->sigma);
 		}
+	}
 
-		//Give atoms absolute coordinates by adding displacement of current cell from the origin.
+	void remap_atoms()
+	{
+		Atom* temp = first_atom;
+		while (first_atom != NULL)
+		{
+			first_atom->r[0] += r[0];
+			first_atom->r[1] += r[1];
+			first_atom->r[2] += r[2];
 
+			first_atom = first_atom->Next;
+		}
+		first_atom = temp;
 	}
 
 	void Print()
@@ -198,14 +221,21 @@ public:
 	{
 		temp_cell = first_cell;
 		Cell_in->temp_atom = Cell_in->first_atom;
+		double a1_factor;
+		double a2_factor;
+		double a3_factor;
 
 		while (Cell_in->first_atom != NULL)
 		{
-			Cell_in->first_atom->r[0] = ((Cell_in->first_atom->r[0] * a1[0]) + (Cell_in->first_atom->r[1] * a2[0]) + (Cell_in->first_atom->r[2] * a3[0]));
-			Cell_in->first_atom->r[1] = ((Cell_in->first_atom->r[0] * a1[1]) + (Cell_in->first_atom->r[1] * a2[1]) + (Cell_in->first_atom->r[2] * a3[1]));
-			Cell_in->first_atom->r[2] = ((Cell_in->first_atom->r[0] * a1[2]) + (Cell_in->first_atom->r[1] * a2[2]) + (Cell_in->first_atom->r[2] * a3[2]));
+			a1_factor = Cell_in->first_atom->r[0];
+			a2_factor = Cell_in->first_atom->r[1];
+			a3_factor = Cell_in->first_atom->r[2];
+			Cell_in->first_atom->r[0] = (a1_factor * a1[0]) + (a2_factor * a2[0]) + (a3_factor * a3[0]);
+			Cell_in->first_atom->r[1] = (a1_factor * a1[1]) + (a2_factor * a2[1]) + (a3_factor * a3[1]);
+			Cell_in->first_atom->r[2] = (a1_factor * a1[2]) + (a2_factor * a2[2]) + (a3_factor * a3[2]);
 			Cell_in->first_atom = Cell_in->first_atom->Next;
 		}
+
 
 		Cell_in->first_atom = Cell_in->temp_atom;
 

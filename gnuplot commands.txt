@@ -1,6 +1,0 @@
-set palette model RGB defined (0 "red",1 "blue", 2 "green")
-plot 'AFM.dat' using 1:2:6 notitle with points pt 7 palette
-
-
-set palette model RGB defined (0 "red",1 "blue", 2 "green")
-splot 'AFM.dat' using 1:2:3:6 notitle with points pt 7 palette

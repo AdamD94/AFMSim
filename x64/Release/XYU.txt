@@ -1,0 +1,13 @@
+#xy plot with potential 
+
+set term pngcairo size 1024,798
+set output 'GNU_OUT.png'
+
+unset colorbox
+unset size
+unset origin
+set size ratio -1  
+set xlabel 'x [nm]'
+set ylabel 'y [nm]'
+
+plot 'AFM.dat' using 1:2:3 notitle palette

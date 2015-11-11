@@ -50,17 +50,28 @@ public:
 	double LJPot(Atom* Other_Atom)
 	{
 		double r = Dist(Other_Atom);
-	
-		double e=1.0;
-		double s=1.0;
+		double e = 7*pow(10,-22);
+		double s = 0.4;
 
 		double LJPotential = 4 * e*(pow((s / r), 12) - pow((s / r), 6));
 
 		return LJPotential;
-
 	}
 
+	double LJForce(Atom* Other_Atom)
+	{
+		double r = Dist(Other_Atom)*pow(10, -9);
+		double LJForce = (-8 / r)*LJPot(Other_Atom);
+
+		return LJForce;
+	}
 	
+	double PerpLJForce(Atom* Other_Atom)
+	{
+		double Force = LJForce(Other_Atom)*(Other_Atom->r[2]-r[2])/(Dist(Other_Atom));
+		return Force;
+	}
+
 };
 
 class Unit_Cell
@@ -88,8 +99,7 @@ public:
 		r[1] = r1_in;
 		r[2] = r2_in;
 	}
-
-
+	
 	void Add_Atom(Atom Atom_in)
 	{
 		if (first_atom == NULL)
@@ -121,7 +131,6 @@ public:
 		first_atom = Temp;
 	}
 
-
 	void Print(double var)
 	{
 		Atom* Temp = first_atom;
@@ -145,6 +154,34 @@ public:
 		}
 		first_atom = Temp;
 		return pot;
+	}
+
+	double LJForce(Atom* Tip)
+	{
+		Atom* Temp = first_atom;
+		double Force = 0;
+
+		while (first_atom->Next != NULL)
+		{
+			Force += first_atom->LJForce(Tip);
+			first_atom = first_atom->Next;
+		}
+		first_atom = Temp;
+		return Force;
+	}
+
+	double PerpLJForce(Atom* Tip)
+	{
+		Atom* Temp = first_atom;
+		double Force = 0;
+
+		while (first_atom->Next != NULL)
+		{
+			Force += first_atom->PerpLJForce(Tip);
+			first_atom = first_atom->Next;
+		}
+		first_atom = Temp;
+		return Force;
 	}
 
 };
@@ -179,9 +216,7 @@ public:
 		a3[1] = a3_in[1];
 		a3[2] = a3_in[2];
 	}
-
-
-	
+		
 	void Tile_Space(int a1_cells, int a2_cells, int a3_cells)
 	{	
 		Unit_Cell* temp_cell;
@@ -203,7 +238,6 @@ public:
 		}
 	}
 	
-
 	void Fill_Tiled_Space(Unit_Cell* Cell_in)
 	{
 		Unit_Cell* temp_cell = first_cell;
@@ -276,6 +310,35 @@ public:
 		return pot;
 	}
 
+	double LJForce(Atom* Tip)
+	{
+		Unit_Cell* Temp = first_cell;
+		double Force = 0;
+
+		while (first_cell != NULL)
+		{
+			Force += first_cell->LJForce(Tip);
+			first_cell = first_cell->Next;
+		}
+		first_cell = Temp;
+		return Force;
+	}
+
+	double PerpLJForce(Atom* Tip)
+	{
+		Unit_Cell* Temp = first_cell;
+		double Force = 0;
+
+		while (first_cell != NULL)
+		{
+			Force += first_cell->PerpLJForce(Tip);
+			first_cell = first_cell->Next;
+		}
+		first_cell = Temp;
+		return Force;
+	}
+
+
 };
 
 class Surface
@@ -304,8 +367,6 @@ public:
 		first_Atom = first_Lattice->first_cell->first_atom;
 	}
 
-
-
 	void Print()
 	{
 		Lattice* temp_Lattice = first_Lattice;
@@ -316,7 +377,6 @@ public:
 		}
 		first_Lattice = temp_Lattice;
 	}
-
 
 	void Print(double var)
 	{
@@ -341,6 +401,33 @@ public:
 		first_Lattice = temp_Lattice;
 		return pot;
 	}
+
+	double LJForce(Atom* Tip)
+	{
+		Lattice* temp_Lattice = first_Lattice;
+		double Force = 0;
+		while (first_Lattice != NULL)
+		{
+			Force += first_Lattice->LJForce(Tip);
+			first_Lattice = first_Lattice->Next;
+		}
+		first_Lattice = temp_Lattice;
+		return Force;
+	}
+
+	double PerpLJForce(Atom* Tip)
+	{
+		Lattice* temp_Lattice = first_Lattice;
+		double Force = 0;
+		while (first_Lattice != NULL)
+		{
+			Force += first_Lattice->PerpLJForce(Tip);
+			first_Lattice = first_Lattice->Next;
+		}
+		first_Lattice = temp_Lattice;
+		return Force;
+	}
+
 
 };
 

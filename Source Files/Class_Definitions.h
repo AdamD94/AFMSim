@@ -41,6 +41,11 @@ public:
 		cout << r[0] << " " << r[1] << " " << var << "\n";
 	}
 
+	void XYPrint(double var1, double var2)
+	{
+		cout << r[0] << " " << r[1] << " " << var1 << " " << var2 << "\n";
+	}
+
 	double Dist(Atom* Other_Atom)
 	{
 		double dist = sqrt(pow((Other_Atom->r[2] - r[2]), 2) + pow((Other_Atom->r[1] - r[1]), 2) + pow((Other_Atom->r[0] - r[0]), 2));
@@ -49,9 +54,10 @@ public:
 
 	double LJPot(Atom* Other_Atom)
 	{
+		double e = 3.22*pow(10, -20);
+		double s = 0.241;
+
 		double r = Dist(Other_Atom);
-		double e = 7*pow(10,-22);
-		double s = 0.4;
 
 		double LJPotential = 4 * e*(pow((s / r), 12) - pow((s / r), 6));
 
@@ -60,8 +66,12 @@ public:
 
 	double LJForce(Atom* Other_Atom)
 	{
-		double r = Dist(Other_Atom)*pow(10, -9);
-		double LJForce = (-8 / r)*LJPot(Other_Atom);
+		double e = 3.22*pow(10, -20);
+		double s = 0.241;
+
+		double r = Dist(Other_Atom);
+
+		double LJForce = (4/r)*e*(12*pow((s / r), 12) - 6*pow((s / r), 6))*pow(10, 18);
 
 		return LJForce;
 	}
@@ -70,6 +80,90 @@ public:
 	{
 		double Force = LJForce(Other_Atom)*(Other_Atom->r[2]-r[2])/(Dist(Other_Atom));
 		return Force;
+	}
+
+};
+
+class Tip
+{
+public:
+	Atom* atom;
+	double r[3];
+
+	Tip(double r0_in, double r1_in, double r2_in)
+	{
+		atom = NULL;
+		r[0] = r0_in;
+		r[1] = r1_in;
+		r[2] = r2_in;
+	}
+
+	double LJForce(Atom* Other_Atom)
+	{
+		Atom* Temp = atom;
+		double LJForce = 0;
+
+		while (atom != NULL)
+		{
+			LJForce += atom->LJForce(Other_Atom);
+			atom = atom->Next;
+		}
+		atom = Temp;
+		return LJForce;
+	}
+
+	void Add_Atom(Atom Atom_in)
+	{
+		if (atom == NULL)
+			atom = new Atom(Atom_in.r[0], Atom_in.r[1], Atom_in.r[2] , Atom_in.radius, Atom_in.m, Atom_in.elem);
+
+		else
+			atom->Next = new Atom(Atom_in.r[0] , Atom_in.r[1] , Atom_in.r[2] , Atom_in.radius, Atom_in.m, Atom_in.elem);
+	}
+
+	void Add_Atom(Atom* Atom_in)
+	{
+		if (atom == NULL)
+			atom = new Atom(Atom_in->r[0] + r[0], Atom_in->r[1] + r[1], Atom_in->r[2] + r[2], Atom_in->radius, Atom_in->m, Atom_in->elem);
+
+		else
+			atom->Next = new Atom(Atom_in->r[0] + r[0], Atom_in->r[1] + r[1], Atom_in->r[2] + r[2], Atom_in->radius, Atom_in->m, Atom_in->elem);
+	}
+
+	void Print()
+	{
+		cout << r[0] << " " << r[1] << " " << r[2] << "\n";
+	}
+
+	void Print(int var)
+	{
+		cout << r[0] << " " << r[1] << " " << r[2] <<" " << var << "\n";
+	}
+
+	void Print(double var)
+	{
+		cout << r[0] << " " << r[1] << " " << r[2] << " " << var << "\n";
+	}
+
+	void Print(double var1, double var2)
+	{
+		cout << r[0] << " " << r[1] << " " << r[2] << " " << var1 << " " << var2 << "\n";
+	}
+
+	void MoveTip(double x_in, double y_in, double z_in)
+	{
+		Atom* Temp = atom;
+		while (atom != NULL)
+		{
+			atom->r[0] += x_in;
+			atom->r[1] += y_in;
+			atom->r[2] += z_in;
+			atom = atom->Next;
+		}
+		atom = Temp;
+		r[0] += x_in;
+		r[1] += y_in;
+		r[2] += z_in;
 	}
 
 };
@@ -142,42 +236,56 @@ public:
 		first_atom = Temp;
 	}
 
-	double LJPot(Atom* Tip)
+	double LJPot(Atom* atom_in)
 	{
 		Atom* Temp = first_atom;
 		double pot = 0;
 
 		while (first_atom->Next != NULL)
 		{
-			pot += first_atom->LJPot(Tip);
+			pot += first_atom->LJPot(atom_in);
 			first_atom = first_atom->Next;
 		}
 		first_atom = Temp;
 		return pot;
 	}
 
-	double LJForce(Atom* Tip)
+	double LJForce(Atom* atom_in)
 	{
 		Atom* Temp = first_atom;
 		double Force = 0;
 
 		while (first_atom->Next != NULL)
 		{
-			Force += first_atom->LJForce(Tip);
+			Force += first_atom->LJForce(atom_in);
 			first_atom = first_atom->Next;
 		}
 		first_atom = Temp;
 		return Force;
 	}
 
-	double PerpLJForce(Atom* Tip)
+	double LJForce(Tip* Tip_in)
 	{
 		Atom* Temp = first_atom;
 		double Force = 0;
 
 		while (first_atom->Next != NULL)
 		{
-			Force += first_atom->PerpLJForce(Tip);
+			Force += Tip_in->LJForce(first_atom);
+			first_atom = first_atom->Next;
+		}
+		first_atom = Temp;
+		return Force;
+	}
+
+	double PerpLJForce(Atom* atom_in)
+	{
+		Atom* Temp = first_atom;
+		double Force = 0;
+
+		while (first_atom->Next != NULL)
+		{
+			Force += first_atom->PerpLJForce(atom_in);
 			first_atom = first_atom->Next;
 		}
 		first_atom = Temp;
@@ -296,42 +404,56 @@ public:
 		first_cell = Temp;
 	}
 
-	double LJPot(Atom* Tip)
+	double LJPot(Atom* atom_in)
 	{
 		Unit_Cell* Temp = first_cell;
 		double pot = 0;
 
 		while (first_cell != NULL)
 		{
-			pot += first_cell->LJPot(Tip);
+			pot += first_cell->LJPot(atom_in);
 			first_cell = first_cell->Next;
 		}
 		first_cell = Temp;
 		return pot;
 	}
 
-	double LJForce(Atom* Tip)
+	double LJForce(Atom* atom_in)
 	{
 		Unit_Cell* Temp = first_cell;
 		double Force = 0;
 
 		while (first_cell != NULL)
 		{
-			Force += first_cell->LJForce(Tip);
+			Force += first_cell->LJForce(atom_in);
 			first_cell = first_cell->Next;
 		}
 		first_cell = Temp;
 		return Force;
 	}
 
-	double PerpLJForce(Atom* Tip)
+	double LJForce(Tip* Tip_in)
 	{
 		Unit_Cell* Temp = first_cell;
 		double Force = 0;
 
 		while (first_cell != NULL)
 		{
-			Force += first_cell->PerpLJForce(Tip);
+			Force += first_cell->LJForce(Tip_in);
+			first_cell = first_cell->Next;
+		}
+		first_cell = Temp;
+		return Force;
+	}
+
+	double PerpLJForce(Atom* atom_in)
+	{
+		Unit_Cell* Temp = first_cell;
+		double Force = 0;
+
+		while (first_cell != NULL)
+		{
+			Force += first_cell->PerpLJForce(atom_in);
 			first_cell = first_cell->Next;
 		}
 		first_cell = Temp;
@@ -389,45 +511,57 @@ public:
 		first_Lattice = temp_Lattice;
 	}
 
-	double LJPot(Atom* Tip)
+	double LJPot(Atom* atom_in)
 	{
 		Lattice* temp_Lattice = first_Lattice;
 		double pot = 0;
 		while (first_Lattice != NULL)
 		{
-			pot += first_Lattice->LJPot(Tip);
+			pot += first_Lattice->LJPot(atom_in);
 			first_Lattice = first_Lattice->Next;
 		}
 		first_Lattice = temp_Lattice;
 		return pot;
 	}
 
-	double LJForce(Atom* Tip)
+	double LJForce(Atom* atom_in)
 	{
 		Lattice* temp_Lattice = first_Lattice;
 		double Force = 0;
 		while (first_Lattice != NULL)
 		{
-			Force += first_Lattice->LJForce(Tip);
+			Force += first_Lattice->LJForce(atom_in);
 			first_Lattice = first_Lattice->Next;
 		}
 		first_Lattice = temp_Lattice;
 		return Force;
 	}
 
-	double PerpLJForce(Atom* Tip)
+	double PerpLJForce(Atom* atom_in)
 	{
 		Lattice* temp_Lattice = first_Lattice;
 		double Force = 0;
 		while (first_Lattice != NULL)
 		{
-			Force += first_Lattice->PerpLJForce(Tip);
+			Force += first_Lattice->PerpLJForce(atom_in);
 			first_Lattice = first_Lattice->Next;
 		}
 		first_Lattice = temp_Lattice;
 		return Force;
 	}
 
+	double LJForce(Tip* Tip_in)
+	{
+		Lattice* temp_Lattice = first_Lattice;
+		double Force = 0;
+		while (first_Lattice != NULL)
+		{
+			Force += first_Lattice->LJForce(Tip_in);
+			first_Lattice = first_Lattice->Next;
+		}
+		first_Lattice = temp_Lattice;
+		return Force;
+	}
 
 };
 

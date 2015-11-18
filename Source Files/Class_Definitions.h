@@ -66,12 +66,12 @@ public:
 
 	double LJForce(Atom* Other_Atom)
 	{
-		double e = 3.22*pow(10, -20);
-		double s = 0.241;
+		double e = 3.534*pow(10, -21);
+		double s = 0.295;
 
 		double r = Dist(Other_Atom);
 
-		double LJForce = (4/r)*e*(12*pow((s / r), 12) - 6*pow((s / r), 6))*pow(10, 18);
+		double LJForce = (-4/r)*e*(12*pow((s / r), 12) - 6*pow((s / r), 6))*pow(10, 18);
 
 		return LJForce;
 	}
@@ -114,20 +114,37 @@ public:
 
 	void Add_Atom(Atom Atom_in)
 	{
+		Atom* Temp = atom;
 		if (atom == NULL)
-			atom = new Atom(Atom_in.r[0], Atom_in.r[1], Atom_in.r[2] , Atom_in.radius, Atom_in.m, Atom_in.elem);
+			atom = new Atom(Atom_in.r[0], Atom_in.r[1], Atom_in.r[2], Atom_in.radius, Atom_in.m, Atom_in.elem);
 
 		else
-			atom->Next = new Atom(Atom_in.r[0] , Atom_in.r[1] , Atom_in.r[2] , Atom_in.radius, Atom_in.m, Atom_in.elem);
+		{
+			while (atom->Next != NULL)
+			{
+				atom = atom->Next;
+			}
+
+			atom->Next = new Atom(Atom_in.r[0], Atom_in.r[1], Atom_in.r[2], Atom_in.radius, Atom_in.m, Atom_in.elem);
+			atom = Temp;
+		}
 	}
 
 	void Add_Atom(Atom* Atom_in)
 	{
+		Atom* Temp = atom;
 		if (atom == NULL)
 			atom = new Atom(Atom_in->r[0] + r[0], Atom_in->r[1] + r[1], Atom_in->r[2] + r[2], Atom_in->radius, Atom_in->m, Atom_in->elem);
 
 		else
+		{
+			while (atom->Next != NULL)
+			{
+				atom = atom->Next;
+			}
 			atom->Next = new Atom(Atom_in->r[0] + r[0], Atom_in->r[1] + r[1], Atom_in->r[2] + r[2], Atom_in->radius, Atom_in->m, Atom_in->elem);
+			atom = Temp;
+		}
 	}
 
 	void Print()
@@ -196,20 +213,36 @@ public:
 	
 	void Add_Atom(Atom Atom_in)
 	{
+		Atom* Temp = first_atom;
 		if (first_atom == NULL)
 			first_atom = new Atom(Atom_in.r[0] + r[0], Atom_in.r[1] + r[1], Atom_in.r[2] + r[2], Atom_in.radius, Atom_in.m, Atom_in.elem);
 
 		else
+		{
+			while (first_atom->Next != NULL)
+			{
+				first_atom = first_atom->Next;
+			}
 			first_atom->Next = new Atom(Atom_in.r[0] + r[0], Atom_in.r[1] + r[1], Atom_in.r[2] + r[2], Atom_in.radius, Atom_in.m, Atom_in.elem);
+			first_atom = Temp;
+		}
 	}
 
 	void Add_Atom(Atom* Atom_in)
 	{
+		Atom* Temp = first_atom;
 		if (first_atom == NULL)
 			first_atom = new Atom(Atom_in->r[0] + r[0], Atom_in->r[1] + r[1], Atom_in->r[2] + r[2], Atom_in->radius, Atom_in->m, Atom_in->elem);
 
 		else
+		{
+			while (first_atom->Next != NULL)
+			{
+				first_atom = first_atom->Next;
+			}
 			first_atom->Next = new Atom(Atom_in->r[0] + r[0], Atom_in->r[1] + r[1], Atom_in->r[2] + r[2], Atom_in->radius, Atom_in->m, Atom_in->elem);
+			first_atom = Temp;
+		}
 	}
 
 	void Print()

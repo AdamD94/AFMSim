@@ -3,6 +3,7 @@
 set term pngcairo size 1024,798
 set output 'GNU_OUT.png'
 
+set palette rgbformulae 22,13,-31
 unset size
 unset origin
 set size ratio -1  

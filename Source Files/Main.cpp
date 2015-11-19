@@ -46,35 +46,50 @@ void LJToFile(Surface* surface, Atom* atom_in, int a1_cells ,int a2_cells, doubl
 
 void LJToFile(Surface* surface, Tip* Tip_in, int a1_cells, int a2_cells, double a1[], double a2[])
 {
-	int res = 65;
-	int k = 0;
+	double step = 0.01;
 	double Average = 0;
-	std::ofstream out("AFM.dat");
+	double XMax = (a1[0] * a1_cells + a2[0] * a2_cells) / 2 + 1 * (abs(a1[0]) + abs(a1[0]));
+	double XMin = (a1[0] * a1_cells + a2[0] * a2_cells) / 2 - 1 * (abs(a1[0]) + abs(a1[0]));
+	double YMax = (a1[1] * a1_cells + a2[1] * a2_cells) / 2 + 1 * (abs(a1[1]) + abs(a1[1]));
+	double YMin = (a1[1] * a1_cells + a2[1] * a2_cells) / 2 - 1 * (abs(a1[1]) + abs(a1[1]));
+	int k = 0;
+
+	std::ofstream out("Surface.dat");
 	std::streambuf *coutbuf = std::cout.rdbuf(); //save old buf
 	std::cout.rdbuf(out.rdbuf()); //redirect std::cout to AFM.dat
 
-	cout << "x " << "y " << "z " << "U " << endl;
+	cout << "x " << "y " <<"z " << "U " << endl;
 
-	for (int j = (((a2_cells/2)-1)*res); j < (((a2_cells / 2) + 1)*res); j++)
-	{
-		for (int i = (((a1_cells / 2) - 1)*res); i < (((a1_cells / 2) + 1)*res); i++)
+	Tip_in->MoveTip(XMin - Tip_in->r[0], YMin - Tip_in->r[1], 0);
+
+
+		Tip_in->MoveTip(0, YMin - Tip_in->r[1], 0);
+		while (Tip_in->r[1] < YMax)
 		{
-			Tip_in->MoveTip((i*a1[0] + j*a2[0]) / res - Tip_in->r[0], (i*a1[1] + j*a2[1]) / res - Tip_in->r[1], 0);
-			Average+=surface->LJForce(Tip_in);
-			k++;
+			Tip_in->MoveTip(XMin - Tip_in->r[0], 0, 0);
+			while (Tip_in->r[0] < XMax)
+			{
+				Average += surface->LJForce(Tip_in);
+				Tip_in->MoveTip(step * 10, 0, 0);
+				k++;
+			}
+			Tip_in->MoveTip(0, step * 10, 0);
 		}
-	}
 
-	Average = Average / k;
+		Average = Average / k;
+		Tip_in->MoveTip(0, YMin - Tip_in->r[1], 0);
 
-	for (int j = (-res); j < a2_cells*res; j++)
-	{
-		for (int i = (-res); i < a1_cells*res; i++)
+		while (Tip_in->r[1] < YMax)
 		{
-			Tip_in->MoveTip((i*a1[0] + j*a2[0]) / res - Tip_in->r[0], (i*a1[1] + j*a2[1]) / res - Tip_in->r[1], 0);
-			Tip_in->Print(surface->LJForce(Tip_in)-Average);
+			Tip_in->MoveTip(XMin - Tip_in->r[0], 0, 0);
+			while (Tip_in->r[0] < XMax)
+			{
+				Tip_in->Print(surface->LJForce(Tip_in));
+				Tip_in->MoveTip(step, 0, 0);
+			}
+			Tip_in->MoveTip(0, step, 0);
 		}
-	}
+
 	cout << endl;
 	std::cout.rdbuf(coutbuf); //reset to standard output again
 }
@@ -139,7 +154,7 @@ void ForceCurve(Surface* surface, Atom* Atom_in, int a1_cells, int a2_cells, dou
 
 void ForceCurve(Surface* surface, Tip* Tip_in, int a1_cells, int a2_cells, double a1[], double a2[])
 {
-	double zstep = 0.005;
+	double zstep = 0.0025;
 	double xstep = 0.01;
 	double Average = 0;
 	double XMax = (((a1_cells / 2) + 0.5)*a1[0] + ((a2_cells / 2) + 0.5)*a2[0]);
@@ -195,8 +210,8 @@ int	main()
 {
 	clock_t tic = clock();	// Read in current clock cycle
 
-	int a1_cells = 10;		// Number of cells to be generated in the a1, a2 and a3 directions
-	int	a2_cells = 10;		
+	int a1_cells = 20;		// Number of cells to be generated in the a1, a2 and a3 directions
+	int	a2_cells = 20;		
 	int a3_cells = 2;	
 
 	double a = 1.4;
@@ -205,25 +220,24 @@ int	main()
 	double a2[3] = {a* 3.0 / 2.0	, a *-sqrt(3.0) / 2	,a*  0.0 };	
 	double a3[3] = {a* 0.5			, a * sqrt(3.0)		,a* -1.0 };	
 
-				//a1   a2    a3    r    m   element
+	Atom* atom1 = new Atom( 0,   0,   0);	// Atom for the tip, coordinates are absolute
+	Atom* atom2 = new Atom( 0,   0,   aPt);
+	Atom* atom3 = new Atom( aPt, 0,   aPt);
+	Atom* atom4 = new Atom(-aPt, 0,	  aPt);
+	Atom* atom5 = new Atom( 0,	 aPt, aPt);
+	Atom* atom6 = new Atom( 0,	-aPt, aPt);
+
+	Tip* Tip1 = new Tip(0, 0, 3);
+	Tip1->Add_Atom(atom1);
+	Tip1->Add_Atom(atom2);
+	Tip1->Add_Atom(atom3);
+	Tip1->Add_Atom(atom4);
+	Tip1->Add_Atom(atom5);
+	Tip1->Add_Atom(atom6);
+
+				
 	Atom Carbon1(0  , 0  , 0);		// Atoms to be added to the basis, coordinates are in terms of a1, a2, a3
 	Atom Carbon2(1/3, 1/3, 0);	
-
-
-	Atom* atom1 = new Atom( 0,    0,   0);	// Atom for the tip, coordinates are absolute
-	Atom* atom2 = new Atom( 0,    0,   aPt);
-	Atom* atom3 = new Atom( aPt,  0,   aPt);
-	Atom* atom4 = new Atom(-aPt,  0,   aPt);
-	Atom* atom5 = new Atom( 0,    aPt, aPt);
-	Atom* atom6 = new Atom( 0,   -aPt, aPt);
-
-	Tip* Tip1 = new Tip(0,0,3);
-		Tip1->Add_Atom(atom1);
-		Tip1->Add_Atom(atom2);
-		Tip1->Add_Atom(atom3);
-		Tip1->Add_Atom(atom4);
-		Tip1->Add_Atom(atom5);
-		Tip1->Add_Atom(atom6);
 
 	Lattice* Square = new Lattice(a1, a2, a3);	// Lattice used to define shape of unit cells
 

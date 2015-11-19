@@ -46,14 +46,20 @@ public:
 	}
 
 	double LJPot(Atom* Other_Atom)
-	{
+	{	
 		temp = Dist(Other_Atom);
+		if (temp > 3 * s)
+			return 0;
+
 		return (double)	 4 * e*(pow((s /temp), 12) - pow((s / temp), 6));
 	}
 
 	double LJForce(Atom* Other_Atom)
 	{
 		temp = Dist(Other_Atom);
+		if (temp > 3 * s)
+			return 0;
+
 		return (double) (-4 / temp)*e*(12 * pow((s / temp), 12) - 6 * pow((s / temp), 6))*pow(10, 19);
 	}
 	
@@ -307,8 +313,6 @@ public:
 
 	double LJPot(Tip* Tip_in)
 	{
-		if (first_atom->Dist(Tip_in->atom) > 3 * Tip_in->atom->s)
-			return 0;
 
 		Atom* Temp = first_atom;
 		double pot = 0;
@@ -321,13 +325,9 @@ public:
 		first_atom = Temp;
 		return pot;
 	}
-
-
+	
 	double LJForce(Tip* Tip_in)
 	{
-		if (first_atom->Dist(Tip_in->atom) > 3 * Tip_in->atom->s)
-			return 0;
-
 		Atom* Temp = first_atom;
 		double Force = 0;
 
@@ -507,7 +507,6 @@ public:
 		first_cell = Temp;
 		return LJPot;
 	}
-
 
 	double PerpLJForce(Atom* atom_in)
 	{

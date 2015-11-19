@@ -37,7 +37,7 @@ void LJToFile(Surface* surface, Atom* atom_in, int a1_cells ,int a2_cells, doubl
 		{
 			atom_in->r[0] = (i*a1[0] + j*a2[0])/ res;
 			atom_in->r[1] = (i*a1[1] + j*a2[1])/ res;
-			atom_in->XYPrint(surface->LJPot(atom_in));
+			atom_in->Print(surface->LJPot(atom_in));
 		}
 	}
 	cout << endl;
@@ -81,8 +81,8 @@ void LJToFile(Surface* surface, Tip* Tip_in, int a1_cells, int a2_cells, double 
 
 void ForceCurve(Surface* surface, Atom* Atom_in, int a1_cells, int a2_cells, double a1[], double a2[])
 {
-	double zstep = 0.0005;
-	double xstep = 0.001;
+	double zstep = 0.005;
+	double xstep = 0.01;
 	double Average = 0;
 	double XMax = (((a1_cells / 2) + 0.5)*a1[0] + ((a2_cells / 2) + 0.5)*a2[0]);
 	double XMin = (((a1_cells / 2) - 1.5)*a1[0] + ((a2_cells / 2) - 1.5)*a2[0]);
@@ -139,15 +139,15 @@ void ForceCurve(Surface* surface, Atom* Atom_in, int a1_cells, int a2_cells, dou
 
 void ForceCurve(Surface* surface, Tip* Tip_in, int a1_cells, int a2_cells, double a1[], double a2[])
 {
-	double zstep = 0.0005;
-	double xstep = 0.001;
+	double zstep = 0.005;
+	double xstep = 0.01;
 	double Average = 0;
 	double XMax = (((a1_cells / 2) + 0.5)*a1[0] + ((a2_cells / 2) + 0.5)*a2[0]);
 	double XMin = (((a1_cells / 2) - 1.5)*a1[0] + ((a2_cells / 2) - 1.5)*a2[0]);
 	double YMax = abs(a1[1]) + abs(a2[1]);
 	double YMin = 0;
-	double ZMax = 0.4;
-	double ZMin = 0.3;
+	double ZMax = 4;
+	double ZMin = 3;
 	int i = 0;
 
 	std::ofstream out("Force_Curve.dat");
@@ -199,24 +199,25 @@ int	main()
 	int	a2_cells = 10;		
 	int a3_cells = 2;	
 
-	double a = 0.14;
+	double a = 1.4;
+	double aPt = 2.27;
 	double a1[3] = {a* 3.0 / 2.0	, a * sqrt(3.0) / 2	,a*  0.0 };	// Lattice vectors as in crystallagraphy
 	double a2[3] = {a* 3.0 / 2.0	, a *-sqrt(3.0) / 2	,a*  0.0 };	
 	double a3[3] = {a* 0.5			, a * sqrt(3.0)		,a* -1.0 };	
 
 				//a1   a2    a3    r    m   element
-	Atom Carbon1(0  , 0  , 0, 0.4, 12, "C12");		// Atoms to be added to the basis, coordinates are in terms of a1, a2, a3
-	Atom Carbon2(1/3, 1/3, 0, 0.4, 12, "C12");	
+	Atom Carbon1(0  , 0  , 0);		// Atoms to be added to the basis, coordinates are in terms of a1, a2, a3
+	Atom Carbon2(1/3, 1/3, 0);	
 
 
-	Atom* atom1 = new Atom( 0,  0, 0, 0.4, 12, "C12");	// Atom for the tip, coordinates are absolute
-	Atom* atom2 = new Atom( 0,  0, a, 0.4, 12, "C12");
-	Atom* atom3 = new Atom( a,  0, a, 0.4, 12, "C12");
-	Atom* atom4 = new Atom(-a,  0, a, 0.4, 12, "C12");
-	Atom* atom5 = new Atom( 0,  a, a, 0.4, 12, "C12");
-	Atom* atom6 = new Atom( 0, -a, a, 0.4, 12, "C12");
+	Atom* atom1 = new Atom( 0,    0,   0);	// Atom for the tip, coordinates are absolute
+	Atom* atom2 = new Atom( 0,    0,   aPt);
+	Atom* atom3 = new Atom( aPt,  0,   aPt);
+	Atom* atom4 = new Atom(-aPt,  0,   aPt);
+	Atom* atom5 = new Atom( 0,    aPt, aPt);
+	Atom* atom6 = new Atom( 0,   -aPt, aPt);
 
-	Tip* Tip1 = new Tip(0,0,0.3);
+	Tip* Tip1 = new Tip(0,0,3);
 		Tip1->Add_Atom(atom1);
 		Tip1->Add_Atom(atom2);
 		Tip1->Add_Atom(atom3);
@@ -232,7 +233,7 @@ int	main()
 
 	Surface* surface = new Surface(Square, simple_cell, a1_cells, a2_cells, a3_cells);	//Surface generation, unit cell is tiled over space in the directions defined by a1,a2,a3
 
-//	LJToFile(surface, Tip1, a1_cells, a2_cells, a1, a2);
+	LJToFile(surface, Tip1, a1_cells, a2_cells, a1, a2);
 	ForceCurve(surface, Tip1, a1_cells, a2_cells, a1, a2);	//Print the LJ-potential to a file over extent of crystal
 	
 	clock_t toc = clock(); // Read in current clock cycle, subtract and divide by clock frequency for time elapsed in seconds

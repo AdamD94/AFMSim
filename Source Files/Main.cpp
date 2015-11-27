@@ -12,16 +12,22 @@ int	main()
 {
 	clock_t tic = clock();	// Read in current clock cycle
 
-	int a1_cells = 15;		// Number of cells to be generated in the a1, a2 and a3 directions
-	int	a2_cells = 15;		
+	int a1_cells = 12;		// Number of cells to be generated in the a1, a2 and a3 directions
+	int	a2_cells = 12;		
 	int a3_cells = 2;	
 
 	double a = 1.4;
+	double b = 1.5;
+	double c = 6.0;
 	double aPt = 2.27;
 
-	double a1[3] = {a* 3.0 / 2.0	, a * sqrt(3.0) / 2	,a*  0.0 };	// Lattice vectors as in crystallagraphy
-	double a2[3] = {a* 3.0 / 2.0	, a *-sqrt(3.0) / 2	,a*  0.0 };	
-	double a3[3] = {a* 0.5			, a * sqrt(3.0)		,a* -1.0 };	
+	double a1[3] = {a* 3.0 / 2.0	, a * sqrt(3.0) / 2.0	,a*  0.0 };	// Lattice vectors as in crystallagraphy
+	double a2[3] = {a* 3.0 / 2.0	, a *-sqrt(3.0) / 2.0	,a*  0.0 };	
+	double a3[3] = {a* 0.5			, a * sqrt(3.0)			,c* -1.0 };	
+
+//	double a1[3] = {b, 0 ,0};	// Lattice vectors as in crystallagraphy
+//	double a2[3] = {0, b ,0 };
+//	double a3[3] = {0,0, -1.0*c };
 
 	double e = 3.534*pow(10, -21);	//epsilon	[Joules]	(LJ Parameter) 
 	double s = 2.95;				//sigma		[Angstroms] (LJ Parameter) 
@@ -42,8 +48,8 @@ int	main()
 			Tip1->Add_Atom(atom6);
 	
 				
-	Atom Carbon1(0, 0, 0);		// Atoms to be added to the basis, coordinates are in terms of a1, a2, a3
-	Atom Carbon2(1/3, 1/3, 0);
+	Atom* Carbon1 = new Atom(0.0, 0.0, 0.0);		// Atoms to be added to the basis, coordinates are in terms of a1, a2, a3
+	Atom* Carbon2 = new Atom((2.0/3.0), (2.0/3.0), 0.0);
 
 	Lattice* Square = new Lattice(a1, a2, a3);	// Lattice used to define shape of unit cells
 
@@ -55,7 +61,6 @@ int	main()
 	
 	surface->ForceCurve(Tip1, a1_cells, a2_cells, a1, a2);
 	surface->SurfaceForce(Tip1, a1_cells, a2_cells, a1, a2);
-
 
 	clock_t toc = clock(); // Read in current clock cycle, subtract and divide by clock frequency for time elapsed in seconds
 	cout << "Simulation Complete \nElapsed: " << (double)(toc - tic) / CLOCKS_PER_SEC << "  seconds" << endl;

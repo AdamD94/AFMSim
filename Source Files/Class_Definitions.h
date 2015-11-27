@@ -70,7 +70,7 @@ public:
 		if (temp > 3 * s)
 			return 0;
 
-		return (double) (-4 / temp)*e*(12 * pow((s / temp), 12) - 6 * pow((s / temp), 6))*pow(10, 19);
+		return (double) (4.0 / temp)*e*(12 * pow((s / temp), 12) - 6 * pow((s / temp), 6))*pow(10, 19);
 	}
 	
 	double PerpLJForce(Atom* Other_Atom)
@@ -287,7 +287,7 @@ public:
 		Atom* Temp = first_atom;
 		double Force = 0;
 
-		while (first_atom->Next != NULL)
+		while (first_atom != NULL)
 		{
 			Force += Tip_in->PerpLJForce(first_atom);
 			first_atom = first_atom->Next;
@@ -302,7 +302,7 @@ public:
 		Atom* Temp = first_atom;
 		double pot = 0;
 
-		while (first_atom->Next != NULL)
+		while (first_atom != NULL)
 		{
 			pot += Tip_in->LJPot(first_atom);
 			first_atom = first_atom->Next;
@@ -316,7 +316,7 @@ public:
 		Atom* Temp = first_atom;
 		double Force = 0;
 
-		while (first_atom->Next != NULL)
+		while (first_atom != NULL)
 		{
 			Force += Tip_in->LJForce(first_atom);
 			first_atom = first_atom->Next;
@@ -497,6 +497,10 @@ public:
 
 	void Print()
 	{
+		std::ofstream out("Locations.dat");
+		std::streambuf *coutbuf = std::cout.rdbuf(); //save old buf
+		std::cout.rdbuf(out.rdbuf()); //redirect std::cout to Locations.dat
+
 		Lattice* temp_Lattice = first_Lattice;
 		while (first_Lattice != NULL)
 		{
@@ -504,6 +508,9 @@ public:
 			first_Lattice = first_Lattice->Next;
 		}
 		first_Lattice = temp_Lattice;
+		std::cout.rdbuf(coutbuf); //reset to standard output again
+
+
 	}
 
 	double LJPot(Tip* Tip_in)
@@ -547,18 +554,18 @@ public:
 
 	void SurfaceForce(Tip* Tip_in, int a1_cells, int a2_cells, double a1[], double a2[])
 	{
-		double step = 0.01;
 		double Average = 0;
-		double XMax = (a1[0] * a1_cells + a2[0] * a2_cells) / 2 + 1 * (abs(a1[0]) + abs(a1[0]));
-		double XMin = (a1[0] * a1_cells + a2[0] * a2_cells) / 2 - 1 * (abs(a1[0]) + abs(a1[0]));
-		double YMax = (a1[1] * a1_cells + a2[1] * a2_cells) / 2 + 1 * (abs(a1[1]) + abs(a1[1]));
-		double YMin = (a1[1] * a1_cells + a2[1] * a2_cells) / 2 - 1 * (abs(a1[1]) + abs(a1[1]));
+		double XMax = (a1[0] * a1_cells + a2[0] * a2_cells) / 2 + 1 * (abs(a1[0]) + abs(a2[0]));
+		double XMin = (a1[0] * a1_cells + a2[0] * a2_cells) / 2 - 1 * (abs(a1[0]) + abs(a2[0]));
+		double YMax = (a1[1] * a1_cells + a2[1] * a2_cells) / 2 + 1 * (abs(a1[1]) + abs(a2[1]));
+		double YMin = (a1[1] * a1_cells + a2[1] * a2_cells) / 2 - 1 * (abs(a1[1]) + abs(a2[1]));
 		int k = 0;
 		double original_position[3] = { Tip_in->r[0], Tip_in->r[1], Tip_in->r[2] };
+		double step = (XMax-XMin)/750;
 
 		std::ofstream out("Surface.dat");
 		std::streambuf *coutbuf = std::cout.rdbuf(); //save old buf
-		std::cout.rdbuf(out.rdbuf()); //redirect std::cout to AFM.dat
+		std::cout.rdbuf(out.rdbuf()); //redirect std::cout to Surface.dat
 
 		cout << "x " << "y " << "z " << "U " << endl;
 
@@ -571,10 +578,10 @@ public:
 			while (Tip_in->r[0] < XMax)
 			{
 				Average += LJForce(Tip_in);
-				Tip_in->MoveTip(step * 10, 0, 0);
+				Tip_in->MoveTip(step * 50, 0, 0);
 				k++;
 			}
-			Tip_in->MoveTip(0, step * 10, 0);
+			Tip_in->MoveTip(0, step * 50, 0);
 		}
 
 		Average = Average / k;
@@ -598,16 +605,17 @@ public:
 
 	void ForceCurve(Tip* Tip_in, int a1_cells, int a2_cells, double a1[], double a2[])
 	{
-		double zstep = 0.005;
-		double xystep = 0.01;
+	
 		double Average = 0;
-		double XMax = (((a1_cells / 2) + 0.5)*a1[0] + ((a2_cells / 2) + 0.5)*a2[0]);
-		double XMin = (((a1_cells / 2) - 1.5)*a1[0] + ((a2_cells / 2) - 1.5)*a2[0]);
+		double XMax = (((a1_cells / 2) + 0.75)*a1[0] + ((a2_cells / 2) + 0.75)*a2[0]);
+		double XMin = (((a1_cells / 2) - 1.25)*a1[0] + ((a2_cells / 2) - 1.25)*a2[0]);
 		double YMax = abs(a1[1]) + abs(a2[1]);
 		double YMin = 0;
 		double ZMax = 4;
 		double ZMin = 3;
 		int k = 0;
+		double zstep = (ZMax - ZMin) / 750;
+		double xystep = (XMax - XMin) / 750;
 		double original_position[3] = { Tip_in->r[0], Tip_in->r[1], Tip_in->r[2] };
 
 		std::ofstream out("Force_Curve.dat");
@@ -629,9 +637,9 @@ public:
 				{
 					Average += LJForce(Tip_in);
 					k++;
-					Tip_in->MoveTip(xystep * 10, 0, 0);
+					Tip_in->MoveTip(xystep * 50, 0, 0);
 				}
-				Tip_in->MoveTip(0, xystep * 10, 0);
+				Tip_in->MoveTip(0, xystep * 50, 0);
 			}
 			Average = Average / k;
 
@@ -656,13 +664,13 @@ public:
 
 	void PerpSurfaceForce(Tip* Tip_in, int a1_cells, int a2_cells, double a1[], double a2[])
 	{
-		double step = 0.01;
 		double Average = 0;
-		double XMax = (a1[0] * a1_cells + a2[0] * a2_cells) / 2 + 1 * (abs(a1[0]) + abs(a1[0]));
-		double XMin = (a1[0] * a1_cells + a2[0] * a2_cells) / 2 - 1 * (abs(a1[0]) + abs(a1[0]));
-		double YMax = (a1[1] * a1_cells + a2[1] * a2_cells) / 2 + 1 * (abs(a1[1]) + abs(a1[1]));
-		double YMin = (a1[1] * a1_cells + a2[1] * a2_cells) / 2 - 1 * (abs(a1[1]) + abs(a1[1]));
+		double XMax = (a1[0] * a1_cells + a2[0] * a2_cells) / 2 + 1 * (abs(a1[0]) + abs(a2[0]));
+		double XMin = (a1[0] * a1_cells + a2[0] * a2_cells) / 2 - 1 * (abs(a1[0]) + abs(a2[0]));
+		double YMax = (a1[1] * a1_cells + a2[1] * a2_cells) / 2 + 1 * (abs(a1[1]) + abs(a2[1]));
+		double YMin = (a1[1] * a1_cells + a2[1] * a2_cells) / 2 - 1 * (abs(a1[1]) + abs(a2[1]));
 		int k = 0;
+		double step = (XMax - XMin) / 750;
 		double original_position[3] = { Tip_in->r[0], Tip_in->r[1], Tip_in->r[2] };
 
 		std::ofstream out("Surface.dat");
@@ -707,16 +715,16 @@ public:
 
 	void PerpForceCurve(Tip* Tip_in, int a1_cells, int a2_cells, double a1[], double a2[])
 	{
-		double zstep = 0.005;
-		double xystep = 0.01;
 		double Average = 0;
-		double XMax = (((a1_cells / 2) + 0.5)*a1[0] + ((a2_cells / 2) + 0.5)*a2[0]);
-		double XMin = (((a1_cells / 2) - 1.5)*a1[0] + ((a2_cells / 2) - 1.5)*a2[0]);
+		double XMax = (((a1_cells / 2) + 0.75)*a1[0] + ((a2_cells / 2) + 0.75)*a2[0]);
+		double XMin = (((a1_cells / 2) - 1.25)*a1[0] + ((a2_cells / 2) - 1.25)*a2[0]);
 		double YMax = abs(a1[1]) + abs(a2[1]);
 		double YMin = 0;
 		double ZMax = 4;
 		double ZMin = 3;
 		int k = 0;
+		double zstep = (ZMax - ZMin) / 750;
+		double xystep = (XMax - XMin) / 750;
 		double original_position[3] = { Tip_in->r[0], Tip_in->r[1], Tip_in->r[2] };
 
 		std::ofstream out("Force_Curve.dat");
@@ -762,7 +770,6 @@ public:
 		std::cout.rdbuf(coutbuf); //reset to standard output again
 		Tip_in->MoveTip(original_position[0] - Tip_in->r[0], original_position[1] - Tip_in->r[1], original_position[2] - Tip_in->r[2]);
 	}
-
 
 };
 

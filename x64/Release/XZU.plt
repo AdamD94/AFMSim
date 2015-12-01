@@ -1,13 +1,15 @@
 #xy plot with potential 
 
-set term pngcairo enhanced color crop size 1024,798 
+set term pngcairo enhanced color size 1024,798 crop font 'Veranda, 18'
 set output 'Force Curve.png'
-
+  
 set palette model RGB
-set palette model RGB defined (	0 "dark-blue",2 "green",3 "yellow",4 "red",5 "black")
+set palette model RGB defined (0 "dark-blue", 2 "blue",4 "light-blue",5 "green",6 "yellow", 8 "red", 10"black")
 
 set xlabel 'x [Å]'
 set ylabel 'z [Å]'
 set cblabel 'F [nN]'
+
+set size ratio -5
 
 plot 'Force_Curve.dat' using 1:3:4 notitle palette

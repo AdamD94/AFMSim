@@ -28,7 +28,7 @@ int	main()
 	double s = 2.95;				//sigma		[Angstroms] (LJ Parameter) 
 
 	Atom* atom1 = new Atom( 0,   0,   0,   e, s);	// Atom for the tip, coordinates are absolute
-	Atom* atom2 = new Atom(aPt / 4,   aPt/4,   aPt/5, e, s);
+	Atom* atom2 = new Atom(0,   0,   aPt, e, s);
 	Atom* atom3 = new Atom( aPt, 0,   aPt, e, s);
 	Atom* atom4 = new Atom(-aPt, 0,   aPt, e, s);
 	Atom* atom5 = new Atom( 0,   aPt, aPt, e, s);

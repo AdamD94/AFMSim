@@ -32,22 +32,22 @@ public:
 
 	void Print()
 	{
-		printf("%f %f %f \n", r[0], r[1], r[2]);
-	}
-
-	void Print(double var)
-	{
-		printf("%f %f %f %f \n", r[0], r[1], r[2], var);
+		cout << r[0] << " " << r[1] << " " << r[2] << "\n";
 	}
 
 	void Print(int var)
 	{
-		printf("%f %f %f %d \n", r[0], r[1], r[2], var);
+		cout << r[0] << " " << r[1] << " " << r[2] << " " << var << "\n";
+	}
+
+	void Print(double var)
+	{
+		cout << r[0] << " " << r[1] << " " << r[2] << " " << var << "\n";
 	}
 
 	void Print(double var1, double var2)
 	{
-		printf("%f %f %f %f %f \n", r[0], r[1], r[2], var1, var2);
+		cout << r[0] << " " << r[1] << " " << r[2] << " " << var1 << " " << var2 << "\n";
 	}
 
 	double Dist(Atom* Other_Atom)
@@ -178,7 +178,7 @@ public:
 
 	void Print(int var)
 	{
-		cout << r[0] << " " << r[1] << " " << r[2] <<" " << var << "\n";
+		cout << r[0] << " " << r[1] << " " << r[2] << " " << var << "\n";
 	}
 
 	void Print(double var)
@@ -212,7 +212,6 @@ public:
 class Unit_Cell
 {
 public:
-	class Lattice;
 	Atom* first_atom;
 	Unit_Cell* Next;
 	double r[3];	//position vector of unit cell 
@@ -327,24 +326,21 @@ public:
 
 };
 
-class Lattice
+class Surface
 {
-
 public:
 
 	Unit_Cell* first_cell;
-	Lattice* Next;
 
 	double a1[3];	//////////////////////////////////////////////////////////
 	double a2[3];	//		Lattice vectors a1, a2 and a3 follow from		//
 	double a3[3];	//	crystallographic convention and have units of nm	//
-					//////////////////////////////////////////////////////////
+	int a1_cells;	//////////////////////////////////////////////////////////
+	int a2_cells;
+	int a3_cells;
 
-	Lattice(double a1_in[3], double a2_in[3], double a3_in[3])	//Constructor
+	Surface(double a1_in[3], double a2_in[3], double a3_in[3], int a1_cells_in, int a2_cells_in, int a3_cells_in, Unit_Cell* Cell_in)
 	{
-		first_cell = NULL;
-		Next = NULL;
-
 		a1[0] = a1_in[0];
 		a1[1] = a1_in[1];
 		a1[2] = a1_in[2];
@@ -356,10 +352,21 @@ public:
 		a3[0] = a3_in[0];
 		a3[1] = a3_in[1];
 		a3[2] = a3_in[2];
+
+		a1_cells = a1_cells_in;
+		a2_cells = a2_cells_in;
+		a3_cells = a3_cells_in;
+
+		first_cell = Cell_in;
+
+		Tile_Space();
+		Fill_Tiled_Space(Cell_in);
+	
+
 	}
-		
-	void Tile_Space(int a1_cells, int a2_cells, int a3_cells)
-	{	
+
+	void Tile_Space()
+	{
 		Unit_Cell* temp_cell;
 		for (int k = 0; k < a3_cells; k++)
 		{
@@ -368,17 +375,17 @@ public:
 				for (int i = 0; i < a1_cells; i++)
 				{
 					if (i == 0 && j == 0 && k == 0)
-					{ 
+					{
 						i++;
 					}
 					temp_cell = first_cell;
-					first_cell= new Unit_Cell((a1[0]*i + a2[0]*j + a3[0] * (k%2)), (a1[1] * i + a2[1] * j + a3[1] * (k%2) ) , (a1[2] * i + a2[2] * j + a3[2] * k));
+					first_cell = new Unit_Cell((a1[0] * i + a2[0] * j + a3[0] * (k % 2)), (a1[1] * i + a2[1] * j + a3[1] * (k % 2)), (a1[2] * i + a2[2] * j + a3[2] * k));
 					first_cell->Next = temp_cell;
 				}
 			}
 		}
 	}
-	
+
 	void Fill_Tiled_Space(Unit_Cell* Cell_in)
 	{
 		Unit_Cell* temp_cell = first_cell;
@@ -404,7 +411,7 @@ public:
 		while (first_cell->Next != NULL)
 		{
 			while (Cell_in->first_atom != NULL)
-			{		
+			{
 				first_cell->Add_Atom(Cell_in->first_atom);
 				Cell_in->first_atom = Cell_in->first_atom->Next;
 			}
@@ -416,13 +423,18 @@ public:
 
 	void Print()
 	{
-		Unit_Cell* temp_cell= first_cell;
+		std::ofstream out("Locations.dat");
+		std::streambuf *coutbuf = std::cout.rdbuf(); //save old buf
+		std::cout.rdbuf(out.rdbuf()); //redirect std::cout to Surface.dat
+
+		Unit_Cell* temp_cell = first_cell;
 		while (first_cell != NULL)
 		{
 			first_cell->Print();
 			first_cell = first_cell->Next;
 		}
 		first_cell = temp_cell;
+		std::cout.rdbuf(coutbuf); //reset to standard output again
 	}
 
 	double LJPot(Tip* Tip_in)
@@ -466,203 +478,105 @@ public:
 		first_cell = Temp;
 		return Force;
 	}
-	
-};
 
-class Surface
-{
-public:
-	Lattice* first_Lattice;
-	Unit_Cell* first_cell;
-	Atom* first_Atom;
-	Atom* Linked_Atoms;
-	int layer;
-
-	Surface()		//Constructor
-	{
-		first_Lattice = NULL;
-		first_Atom = NULL;
-	}
-
-	Surface(Lattice* Lattice_in, Unit_Cell* Cell_in, int a1_cells, int	a2_cells, int a3_cells)
-	{
-		first_Lattice = Lattice_in;
-		first_Lattice->first_cell = Cell_in;
-
-		first_Lattice->Tile_Space(a1_cells, a2_cells, a3_cells);
-		first_Lattice->Fill_Tiled_Space(Cell_in);
-		first_cell = first_Lattice->first_cell;
-		first_Atom = first_Lattice->first_cell->first_atom;
-	}
-
-	void Print()
-	{
-		std::ofstream out("Locations.dat");
-		std::streambuf *coutbuf = std::cout.rdbuf(); //save old buf
-		std::cout.rdbuf(out.rdbuf()); //redirect std::cout to Locations.dat
-
-		Lattice* temp_Lattice = first_Lattice;
-		while (first_Lattice != NULL)
-		{
-			first_Lattice->Print();
-			first_Lattice = first_Lattice->Next;
-		}
-		first_Lattice = temp_Lattice;
-		std::cout.rdbuf(coutbuf); //reset to standard output again
-
-
-	}
-
-	double LJPot(Tip* Tip_in)
-	{
-		Lattice* temp_Lattice = first_Lattice;
-		double LJPot = 0;
-		while (first_Lattice != NULL)
-		{
-			LJPot += first_Lattice->LJPot(Tip_in);
-			first_Lattice = first_Lattice->Next;
-		}
-		first_Lattice = temp_Lattice;
-		return LJPot;
-	}
-
-	double LJForce(Tip* Tip_in)
-	{
-		Lattice* temp_Lattice = first_Lattice;
-		double Force = 0;
-		while (first_Lattice != NULL)
-		{
-			Force += first_Lattice->LJForce(Tip_in);
-			first_Lattice = first_Lattice->Next;
-		}
-		first_Lattice = temp_Lattice;
-		return Force;
-	}
-
-	double PerpLJForce(Tip* Tip_in)
-	{
-		Lattice* temp_Lattice = first_Lattice;
-		double Force = 0;
-		while (first_Lattice != NULL)
-		{
-			Force += first_Lattice->PerpLJForce(Tip_in);
-			first_Lattice = first_Lattice->Next;
-		}
-		first_Lattice = temp_Lattice;
-		return Force;
-	}
-
-	void SurfaceForce(Tip* Tip_in, int a1_cells, int a2_cells, double a1[], double a2[])
+	void SurfaceForce(Tip* Tip_in)
 	{
 		double Average = 0;
 		double XMax = (a1[0] * a1_cells + a2[0] * a2_cells) / 2 + 1 * (abs(a1[0]) + abs(a2[0]));
 		double XMin = (a1[0] * a1_cells + a2[0] * a2_cells) / 2 - 1 * (abs(a1[0]) + abs(a2[0]));
 		double YMax = (a1[1] * a1_cells + a2[1] * a2_cells) / 2 + 1 * (abs(a1[1]) + abs(a2[1]));
 		double YMin = (a1[1] * a1_cells + a2[1] * a2_cells) / 2 - 1 * (abs(a1[1]) + abs(a2[1]));
-		int k = 0;
-		double original_position[3] = { Tip_in->r[0], Tip_in->r[1], Tip_in->r[2] };
-		double step = (XMax-XMin)/750;
+		double Z = Tip_in->r[2];
 
 		std::ofstream out("Surface.dat");
 		std::streambuf *coutbuf = std::cout.rdbuf(); //save old buf
 		std::cout.rdbuf(out.rdbuf()); //redirect std::cout to Surface.dat
 
-		cout << "x " << "y " << "z " << "U " << endl;
-
-		Tip_in->MoveTip(XMin - Tip_in->r[0], YMin - Tip_in->r[1], 0);
-
-		Tip_in->MoveTip(0, YMin - Tip_in->r[1], 0);
-		while (Tip_in->r[1] < YMax)
-		{
-			Tip_in->MoveTip(XMin - Tip_in->r[0], 0, 0);
-			while (Tip_in->r[0] < XMax)
-			{
-				Average += LJForce(Tip_in);
-				Tip_in->MoveTip(step * 50, 0, 0);
-				k++;
-			}
-			Tip_in->MoveTip(0, step * 50, 0);
-		}
-
-		Average = Average / k;
-		Tip_in->MoveTip(0, YMin - Tip_in->r[1], 0);
-
-		while (Tip_in->r[1] < YMax)
-		{
-			Tip_in->MoveTip(XMin - Tip_in->r[0], 0, 0);
-			while (Tip_in->r[0] < XMax)
-			{
-				Tip_in->Print(LJForce(Tip_in));
-				Tip_in->MoveTip(step, 0, 0);
-			}
-			Tip_in->MoveTip(0, step, 0);
-		}
+		XYZForce(Tip_in, XMax, XMin, YMax, YMin, Z, Z);
 
 		cout << endl;
 		std::cout.rdbuf(coutbuf); //reset to standard output again
-		Tip_in->MoveTip(original_position[0] - Tip_in->r[0], original_position[1] - Tip_in->r[1], original_position[2] - Tip_in->r[2]);
 	}
 
-	void ForceCurve(Tip* Tip_in, int a1_cells, int a2_cells, double a1[], double a2[])
+	void ForceCurve(Tip* Tip_in)
 	{
-	
+
 		double Average = 0;
 		double XMax = (((a1_cells / 2) + 0.75)*a1[0] + ((a2_cells / 2) + 0.75)*a2[0]);
 		double XMin = (((a1_cells / 2) - 1.25)*a1[0] + ((a2_cells / 2) - 1.25)*a2[0]);
-		double YMax = abs(a1[1]) + abs(a2[1]);
-		double YMin = 0;
-		double ZMax = 4;
-		double ZMin = 3;
-		int k = 0;
-		double zstep = (ZMax - ZMin) / 750;
-		double xystep = (XMax - XMin) / 750;
-		double original_position[3] = { Tip_in->r[0], Tip_in->r[1], Tip_in->r[2] };
+		double Y = 0;
+		double ZMax = 4.0;
+		double ZMin = 3.0;
 
 		std::ofstream out("Force_Curve.dat");
 		std::streambuf *coutbuf = std::cout.rdbuf(); //save old buf
-		std::cout.rdbuf(out.rdbuf()); //redirect std::cout to AFM.dat
+		std::cout.rdbuf(out.rdbuf()); //redirect std::cout to Surface.dat
 
-		cout << "x " << "y " << "U " << endl;
+		XYZForce(Tip_in, XMax, XMin, Y, Y, ZMax, ZMin);
+
+		std::cout.rdbuf(coutbuf); //reset to standard output again
+	}
+
+	void XYZForce(Tip* Tip_in, double XMax, double XMin, double YMax, double YMin, double ZMax, double ZMin)
+	{
+		double Average = 0;
+
+		int i = 0;
+		double xstep = (XMax - XMin) / 750;
+		double ystep = (YMax - YMin) / 750;
+		double zstep = (ZMax - ZMin) / 750;
+
+		if (XMax == XMin)
+			xstep = 1;
+		
+		if (YMax == YMin)
+			ystep = 1;
+
+		if (ZMax == ZMin)
+			zstep = 1;
+		
+		double original_position[3] = { Tip_in->r[0], Tip_in->r[1], Tip_in->r[2] };
+
+		cout << "x [Å] " << "y [Å] " << "z [Å] " << "U [nN] " << endl;
 
 		Tip_in->MoveTip(XMin - Tip_in->r[0], YMin - Tip_in->r[1], ZMin - Tip_in->r[2]);
 
-		while (Tip_in->r[2] < ZMax)
+		while (Tip_in->r[2] <= ZMax)
 		{
-			Tip_in->MoveTip(0, YMin - Tip_in->r[1], 0);
-
-			while (Tip_in->r[1] < YMax)
+			while (Tip_in->r[0] <= XMax)
 			{
-				Tip_in->MoveTip(XMin - Tip_in->r[0], 0, 0);
-				while (Tip_in->r[0] < XMax)
+				while (Tip_in->r[1] <= YMax)
 				{
 					Average += LJForce(Tip_in);
-					k++;
-					Tip_in->MoveTip(xystep * 50, 0, 0);
+					i++;
+					Tip_in->MoveTip(0, ystep*25, 0);
 				}
-				Tip_in->MoveTip(0, xystep * 50, 0);
+				Tip_in->MoveTip(xstep*25, YMin-Tip_in->r[1], 0);
 			}
-			Average = Average / k;
+			
+			Average = Average / i;
+			Tip_in->MoveTip(XMin-Tip_in->r[0], YMin - Tip_in->r[1], 0);
 
-			Tip_in->MoveTip(XMin - Tip_in->r[0], YMin - Tip_in->r[1], 0);
-
-			while (Tip_in->r[0] < XMax)
+			while (Tip_in->r[0] <= XMax)
 			{
-
-				Tip_in->Print(LJForce(Tip_in) - Average);
-				Tip_in->MoveTip(xystep, 0, 0);
+				while (Tip_in->r[1] <= YMax)
+				{
+					Tip_in->Print(LJForce(Tip_in)-Average);
+					Tip_in->MoveTip(0, ystep, 0);
+				}
+				Tip_in->MoveTip(xstep, YMin - Tip_in->r[1], 0);
+				cout << "\n";
 			}
-
+			Tip_in->MoveTip(XMin-Tip_in->r[0], YMin - Tip_in->r[1], zstep);
 			Average = 0;
-			k = 0;
-			Tip_in->MoveTip(XMin - Tip_in->r[0], 0, zstep);
+			i = 0;
 		}
 
-		cout << endl;
-		std::cout.rdbuf(coutbuf); //reset to standard output again
+		
 		Tip_in->MoveTip(original_position[0] - Tip_in->r[0], original_position[1] - Tip_in->r[1], original_position[2] - Tip_in->r[2]);
 	}
 
-	void PerpSurfaceForce(Tip* Tip_in, int a1_cells, int a2_cells, double a1[], double a2[])
+	void PerpSurfaceForce(Tip* Tip_in)
 	{
 		double Average = 0;
 		double XMax = (a1[0] * a1_cells + a2[0] * a2_cells) / 2 + 1 * (abs(a1[0]) + abs(a2[0]));
@@ -713,7 +627,7 @@ public:
 		Tip_in->MoveTip(original_position[0] - Tip_in->r[0], original_position[1] - Tip_in->r[1], original_position[2] - Tip_in->r[2]);
 	}
 
-	void PerpForceCurve(Tip* Tip_in, int a1_cells, int a2_cells, double a1[], double a2[])
+	void PerpForceCurve(Tip* Tip_in)
 	{
 		double Average = 0;
 		double XMax = (((a1_cells / 2) + 0.75)*a1[0] + ((a2_cells / 2) + 0.75)*a2[0]);

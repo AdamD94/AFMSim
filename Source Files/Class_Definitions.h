@@ -565,9 +565,13 @@ public:
 					Tip_in->MoveTip(0, ystep, 0);
 				}
 				Tip_in->MoveTip(xstep, YMin - Tip_in->r[1], 0);
-				cout << "\n";
+				if (YMax != YMin)
+				{
+					cout << "\n";
+				}
 			}
 			Tip_in->MoveTip(XMin-Tip_in->r[0], YMin - Tip_in->r[1], zstep);
+			cout << "\n";
 			Average = 0;
 			i = 0;
 		}

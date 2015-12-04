@@ -8,7 +8,7 @@ using namespace std;
 
 #include "Class_Definitions.h"  //Header File containing class definitions
 
-int	main()
+int	main(int argc, char* argv[])
 {
 	clock_t tic = clock();	// Read in current clock cycle
 
@@ -27,14 +27,18 @@ int	main()
 	double e = 3.534*pow(10, -21);	//epsilon	[Joules]	(LJ Parameter) 
 	double s = 2.95;				//sigma		[Angstroms] (LJ Parameter) 
 
-	string filename = "PT-Trilayer";
+	string filename;
 
-	Atom* atom1 = new Atom( 0,   0,   0,   e, s);	// Atom for the tip, coordinates are absolute
-	Atom* atom2 = new Atom(0,   0,   aPt, e, s);
-	Atom* atom3 = new Atom( aPt, 0,   aPt, e, s);
-	Atom* atom4 = new Atom(-aPt, 0,   aPt, e, s);
-	Atom* atom5 = new Atom( 0,   aPt, aPt, e, s);
-	Atom* atom6 = new Atom( 0,  -aPt, aPt, e, s);
+	if (argc != 2) 
+	{
+		cout << "ERROR: Wrong amount of arguments!" << endl;
+		cout << "\nDrag .vesta file onto executable \nwith .xyz file with same name in same directory" << endl;
+		cin.ignore();
+		return 0;
+	}
+
+	filename = argv[1];
+
 
 	Tip* Tip1 = new Tip(0, 0, 3);
 		Tip1->ImportTip(filename, e, s);
@@ -49,6 +53,7 @@ int	main()
 
 	Surface* surface = new Surface(a1, a2, a3, a1_cells, a2_cells, a3_cells, simple_cell);	//Surface generation, unit cell is tiled over space in the directions defined by a1,a2,a3
 
+	cout << "Computing" << endl;
 	surface->ForceCurve(Tip1);
 	surface->SurfaceForce(Tip1);
 	surface->Print();

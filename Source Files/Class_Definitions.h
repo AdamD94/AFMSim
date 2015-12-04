@@ -237,6 +237,11 @@ public:
 		double r_in[3];
 		double r_rot[3];
 
+		vesta_filename.erase(0, vesta_filename.find_last_of("\\", vesta_filename.length()) + 1);
+		vesta_filename.erase(vesta_filename.find_last_of(".", vesta_filename.length() + 1), vesta_filename.length() + 1);
+
+		xyz_filename.erase(0, xyz_filename.find_last_of("\\", xyz_filename.length()) + 1);
+		xyz_filename.erase(xyz_filename.find_last_of(".", xyz_filename.length() + 1), xyz_filename.length() + 1);
 
 		vesta_filename.append(".vesta");
 		xyz_filename.append(".xyz");
@@ -250,6 +255,12 @@ public:
 			
 			}
 		}
+		else
+		{
+			cout << vesta_filename << " not found" << endl;
+			cin.ignore();
+			exit(1);
+		}
 
 		for (int i = 0; i < 4; i++)
 		{
@@ -257,11 +268,6 @@ public:
 			{
 				fin >> orientation[i][j];
 			}
-		}
-
-		for (int i = 0; i < 4; i++)
-		{
-			cout << orientation[i][0] <<" " << orientation[i][1] <<" " << orientation[i][2] << " "<< orientation[i][3] <<endl;
 		}
 
 		fin.close();
@@ -282,6 +288,12 @@ public:
 				Atom temp(r_rot[0], r_rot[2], r_rot[1], epsilon, sigma);
 				Add_Atom(temp);
 			}
+		}
+		else
+		{
+			cout << xyz_filename << " not found" << endl;
+			cin.ignore();
+			exit(1);
 		}
 		fin.close();
 	
@@ -305,7 +317,6 @@ public:
 		}
 
 		atom = temp;
-		cout << r_min[0] << " " << r_min[1] << " " << r_min[2] << endl;
 
 		while (atom != NULL)
 		{
@@ -633,9 +644,9 @@ public:
 		double Average = 0;
 
 		int i = 0;
-		double xstep = (XMax - XMin) / 750;
-		double ystep = (YMax - YMin) / 750;
-		double zstep = (ZMax - ZMin) / 750;
+		double xstep = (XMax - XMin) / 250;
+		double ystep = (YMax - YMin) / 250;
+		double zstep = (ZMax - ZMin) / 250;
 
 		if (XMax == XMin)
 			xstep = 1;

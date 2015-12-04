@@ -176,6 +176,24 @@ public:
 		cout << r[0] << " " << r[1] << " " << r[2] << "\n";
 	}
 
+	void Print_Atoms()
+	{
+		Atom* Temp = atom;
+
+		std::ofstream out("Tip.dat");
+		std::streambuf *coutbuf = std::cout.rdbuf(); //save old buf
+		std::cout.rdbuf(out.rdbuf()); //redirect std::cout to Surface.dat
+
+		while (atom != NULL)
+		{
+			atom->Print();
+			atom = atom->Next;
+		}
+
+		atom = Temp;
+		std::cout.rdbuf(coutbuf); //reset to standard output again
+	}
+
 	void Print(int var)
 	{
 		cout << r[0] << " " << r[1] << " " << r[2] << " " << var << "\n";
@@ -205,6 +223,99 @@ public:
 		r[0] += x_in;
 		r[1] += y_in;
 		r[2] += z_in;
+	}
+
+	void ImportTip(string filename_in, double epsilon, double sigma)
+	{
+
+		string line;
+		string vesta_filename = filename_in;
+		string xyz_filename = filename_in;
+		string ignore;
+		ifstream fin;
+		double orientation[4][4];
+		double r_in[3];
+		double r_rot[3];
+
+
+		vesta_filename.append(".vesta");
+		xyz_filename.append(".xyz");
+
+		fin.open(vesta_filename);
+
+		if (fin.is_open())
+		{
+			while (getline(fin, line) && line.compare("SCENE") != 0)
+			{
+			
+			}
+		}
+
+		for (int i = 0; i < 4; i++)
+		{
+			for (int j = 0; j < 4; j++)
+			{
+				fin >> orientation[i][j];
+			}
+		}
+
+		for (int i = 0; i < 4; i++)
+		{
+			cout << orientation[i][0] <<" " << orientation[i][1] <<" " << orientation[i][2] << " "<< orientation[i][3] <<endl;
+		}
+
+		fin.close();
+
+		fin.open(xyz_filename);
+
+		if (fin.is_open())
+		{
+			getline(fin, line);
+			getline(fin, line);
+
+			while (fin>>ignore>>r_in[0]>>r_in[1]>>r_in[2])
+			{
+				r_rot[0] = orientation[0][0] * r_in[0] + orientation[0][1] * r_in[1] + orientation[0][2] * r_in[2];
+				r_rot[1] = orientation[1][0] * r_in[0] + orientation[1][1] * r_in[1] + orientation[1][2] * r_in[2];
+				r_rot[2] = orientation[2][0] * r_in[0] + orientation[2][1] * r_in[1] + orientation[2][2] * r_in[2];
+
+				Atom temp(r_rot[0], r_rot[2], r_rot[1], epsilon, sigma);
+				Add_Atom(temp);
+			}
+		}
+		fin.close();
+	
+		ResetOrigin();
+	}
+
+	void ResetOrigin()
+	{
+		Atom* temp = atom;
+		double r_min[3] = {1000, 1000, 1000};
+
+		while (atom != NULL)
+		{
+			if (atom->r[2] < r_min[2])
+			{
+				r_min[0] = atom->r[0];
+				r_min[1] = atom->r[1];
+				r_min[2] = atom->r[2];
+			}
+			atom = atom->Next;
+		}
+
+		atom = temp;
+		cout << r_min[0] << " " << r_min[1] << " " << r_min[2] << endl;
+
+		while (atom != NULL)
+		{
+			atom->r[0] = (atom->r[0] - r_min[0]) + r[0];
+			atom->r[1] = (atom->r[1] - r_min[1]) + r[1];
+			atom->r[2] = (atom->r[2] - r_min[2]) + r[2];
+
+			atom = atom->Next;
+		}
+		atom = temp;
 	}
 
 };

@@ -27,6 +27,8 @@ int	main()
 	double e = 3.534*pow(10, -21);	//epsilon	[Joules]	(LJ Parameter) 
 	double s = 2.95;				//sigma		[Angstroms] (LJ Parameter) 
 
+	string filename = "PT-Trilayer";
+
 	Atom* atom1 = new Atom( 0,   0,   0,   e, s);	// Atom for the tip, coordinates are absolute
 	Atom* atom2 = new Atom(0,   0,   aPt, e, s);
 	Atom* atom3 = new Atom( aPt, 0,   aPt, e, s);
@@ -34,14 +36,9 @@ int	main()
 	Atom* atom5 = new Atom( 0,   aPt, aPt, e, s);
 	Atom* atom6 = new Atom( 0,  -aPt, aPt, e, s);
 
-		Tip* Tip1 = new Tip(0, 0, 3);
-			Tip1->Add_Atom(atom1);
-			Tip1->Add_Atom(atom2);
-			Tip1->Add_Atom(atom3);
-			Tip1->Add_Atom(atom4);
-			Tip1->Add_Atom(atom5);
-			Tip1->Add_Atom(atom6);
-	
+	Tip* Tip1 = new Tip(0, 0, 3);
+		Tip1->ImportTip(filename, e, s);
+		Tip1->Print_Atoms();
 				
 	Atom* Carbon1 = new Atom(0.0, 0.0, 0.0);		// Atoms to be added to the basis, coordinates are in terms of a1, a2, a3
 	Atom* Carbon2 = new Atom((2.0/3.0), (2.0/3.0), 0.0);
@@ -51,7 +48,7 @@ int	main()
 		simple_cell->Add_Atom(Carbon2);
 
 	Surface* surface = new Surface(a1, a2, a3, a1_cells, a2_cells, a3_cells, simple_cell);	//Surface generation, unit cell is tiled over space in the directions defined by a1,a2,a3
-	
+
 	surface->ForceCurve(Tip1);
 	surface->SurfaceForce(Tip1);
 	surface->Print();

@@ -1,6 +1,7 @@
 #ifndef Class_Definitions
 #define Class_Definitions
 
+
 class Atom
 {
 public:
@@ -58,19 +59,23 @@ public:
 	double LJPot(Atom* Other_Atom)
 	{	
 		temp = Dist(Other_Atom);
-		if (temp > 3 * s)
+		if (temp > (3 * s))
 			return 0;
 
-		return (double)	 4 * e*(pow((s /temp), 12) - pow((s / temp), 6));
+		const double LJ_Truncation = 4 * e*(pow((s / (3 * s)), 12) - pow((s / (3 * s)), 6));
+
+		return (double)	 4 * e*(pow((s /temp), 12) - pow((s / temp), 6)) - LJ_Truncation;
 	}
 
 	double LJForce(Atom* Other_Atom)
 	{
 		temp = Dist(Other_Atom);
-		if (temp > 3 * s)
+		if (temp > (3 * s))
 			return 0;
 
-		return (double) (4.0 / temp)*e*(12 * pow((s / temp), 12) - 6 * pow((s / temp), 6))*pow(10, 19);
+		const double LJ_Truncation = (4.0 / (3*s))*e*(12 * pow((s / (3 * s)), 12) - 6 * pow((s / (3 * s)), 6))*pow(10, 19);
+
+		return (double) (4.0 / temp)*e*(12 * pow((s / temp), 12) - 6 * pow((s / temp), 6))*pow(10, 19) - LJ_Truncation;
 	}
 	
 	double PerpLJForce(Atom* Other_Atom)
@@ -225,17 +230,20 @@ public:
 		r[2] += z_in;
 	}
 
-	void ImportTip(string filename_in, double epsilon, double sigma)
+	void ImportTip(string filename_in)
 	{
 
 		string line;
 		string vesta_filename = filename_in;
 		string xyz_filename = filename_in;
-		string ignore;
+		string element;
 		ifstream fin;
 		double orientation[4][4];
 		double r_in[3];
 		double r_rot[3];
+		double epsilon = 0;
+		double sigma = 0;
+		int i = 1;
 
 		vesta_filename.erase(0, vesta_filename.find_last_of("\\", vesta_filename.length()) + 1);
 		vesta_filename.erase(vesta_filename.find_last_of(".", vesta_filename.length() + 1), vesta_filename.length() + 1);
@@ -279,11 +287,36 @@ public:
 			getline(fin, line);
 			getline(fin, line);
 
-			while (fin>>ignore>>r_in[0]>>r_in[1]>>r_in[2])
+			while (fin>>element>>r_in[0]>>r_in[1]>>r_in[2])
 			{
 				r_rot[0] = orientation[0][0] * r_in[0] + orientation[0][1] * r_in[1] + orientation[0][2] * r_in[2];
 				r_rot[1] = orientation[1][0] * r_in[0] + orientation[1][1] * r_in[1] + orientation[1][2] * r_in[2];
 				r_rot[2] = orientation[2][0] * r_in[0] + orientation[2][1] * r_in[1] + orientation[2][2] * r_in[2];
+
+				if (element.compare("C") == 0)
+				{
+					epsilon = 1.0456*pow(10, -21);	//epsilon	[Joules]	(LJ Parameter) 
+					sigma = 4.0;					//sigma		[Angstroms] (LJ Parameter) 
+		
+				}
+
+				else if (element.compare("Pt") == 0)
+				{
+					epsilon = 3.534*pow(10, -21);		//epsilon	[Joules]	(LJ Parameter) 
+					sigma = 2.95;					//sigma		[Angstroms] (LJ Parameter) 
+				}
+				else
+				{
+					cout << "Lennard jones parameters not stored for: " << element << ". Assuming Carbon"<< endl;
+					cout << "Call ImportTip(filename, epsilon, sigma)" << endl;
+					element = "C";
+					epsilon = 1.0456*pow(10, -21);	//epsilon	[Joules]	(LJ Parameter) 
+					sigma = 4.0;
+
+				}
+
+				cout << "Atom " << i << ": " << element << endl;
+				i++;
 
 				Atom temp(r_rot[0], r_rot[2], r_rot[1], epsilon, sigma);
 				Add_Atom(temp);
@@ -297,6 +330,83 @@ public:
 		}
 		fin.close();
 	
+		ResetOrigin();
+	}
+
+	void ImportTip(string filename_in, double epsilon, double sigma)
+	{
+
+		string line;
+		string vesta_filename = filename_in;
+		string xyz_filename = filename_in;
+		string element;
+		ifstream fin;
+		double orientation[4][4];
+		double r_in[3];
+		double r_rot[3];
+
+
+		vesta_filename.erase(0, vesta_filename.find_last_of("\\", vesta_filename.length()) + 1);
+		vesta_filename.erase(vesta_filename.find_last_of(".", vesta_filename.length() + 1), vesta_filename.length() + 1);
+
+		xyz_filename.erase(0, xyz_filename.find_last_of("\\", xyz_filename.length()) + 1);
+		xyz_filename.erase(xyz_filename.find_last_of(".", xyz_filename.length() + 1), xyz_filename.length() + 1);
+
+		vesta_filename.append(".vesta");
+		xyz_filename.append(".xyz");
+
+		fin.open(vesta_filename);
+
+		if (fin.is_open())
+		{
+			while (getline(fin, line) && line.compare("SCENE") != 0)
+			{
+
+			}
+		}
+		else
+		{
+			cout << vesta_filename << " not found" << endl;
+			cin.ignore();
+			exit(1);
+		}
+
+		for (int i = 0; i < 4; i++)
+		{
+			for (int j = 0; j < 4; j++)
+			{
+				fin >> orientation[i][j];
+			}
+		}
+
+		fin.close();
+
+		fin.open(xyz_filename);
+
+		if (fin.is_open())
+		{
+			getline(fin, line);
+			getline(fin, line);
+
+			while (fin >> element >> r_in[0] >> r_in[1] >> r_in[2])
+			{
+				r_rot[0] = orientation[0][0] * r_in[0] + orientation[0][1] * r_in[1] + orientation[0][2] * r_in[2];
+				r_rot[1] = orientation[1][0] * r_in[0] + orientation[1][1] * r_in[1] + orientation[1][2] * r_in[2];
+				r_rot[2] = orientation[2][0] * r_in[0] + orientation[2][1] * r_in[1] + orientation[2][2] * r_in[2];
+
+
+				Atom temp(r_rot[0], r_rot[2], r_rot[1], epsilon, sigma);
+				Add_Atom(temp);
+			}
+		}
+		else
+		{
+			cout << xyz_filename << " not found" << endl;
+			cin.ignore();
+			exit(1);
+		}
+		fin.close();
+
 		ResetOrigin();
 	}
 
@@ -609,33 +719,36 @@ public:
 		double YMax = (a1[1] * a1_cells + a2[1] * a2_cells) / 2 + 1 * (abs(a1[1]) + abs(a2[1]));
 		double YMin = (a1[1] * a1_cells + a2[1] * a2_cells) / 2 - 1 * (abs(a1[1]) + abs(a2[1]));
 		double Z = Tip_in->r[2];
-
+		std::stringstream buffer;
 		std::ofstream out("Surface.dat");
+
 		std::streambuf *coutbuf = std::cout.rdbuf(); //save old buf
-		std::cout.rdbuf(out.rdbuf()); //redirect std::cout to Surface.dat
+		std::cout.rdbuf(buffer.rdbuf());
 
 		XYZForce(Tip_in, XMax, XMin, YMax, YMin, Z, Z);
-
-		cout << endl;
+				
+		std::cout.rdbuf(out.rdbuf()); //redirect std::cout to Surface.dat
+		cout << buffer.str() << endl;
 		std::cout.rdbuf(coutbuf); //reset to standard output again
 	}
 
-	void ForceCurve(Tip* Tip_in)
+	void ForceCurve(Tip* Tip_in, double ZMin, double ZMax)
 	{
 
 		double Average = 0;
 		double XMax = (((a1_cells / 2) + 0.75)*a1[0] + ((a2_cells / 2) + 0.75)*a2[0]);
 		double XMin = (((a1_cells / 2) - 1.25)*a1[0] + ((a2_cells / 2) - 1.25)*a2[0]);
 		double Y = 0;
-		double ZMax = 4.0;
-		double ZMin = 3.0;
-
+		std::stringstream buffer;
 		std::ofstream out("Force_Curve.dat");
+
 		std::streambuf *coutbuf = std::cout.rdbuf(); //save old buf
-		std::cout.rdbuf(out.rdbuf()); //redirect std::cout to Surface.dat
+		std::cout.rdbuf(buffer.rdbuf());
 
 		XYZForce(Tip_in, XMax, XMin, Y, Y, ZMax, ZMin);
 
+		std::cout.rdbuf(out.rdbuf()); //redirect std::cout to Surface.dat
+		cout << buffer.str() << endl;
 		std::cout.rdbuf(coutbuf); //reset to standard output again
 	}
 
@@ -701,116 +814,6 @@ public:
 		
 		Tip_in->MoveTip(original_position[0] - Tip_in->r[0], original_position[1] - Tip_in->r[1], original_position[2] - Tip_in->r[2]);
 	}
-
-	void PerpSurfaceForce(Tip* Tip_in)
-	{
-		double Average = 0;
-		double XMax = (a1[0] * a1_cells + a2[0] * a2_cells) / 2 + 1 * (abs(a1[0]) + abs(a2[0]));
-		double XMin = (a1[0] * a1_cells + a2[0] * a2_cells) / 2 - 1 * (abs(a1[0]) + abs(a2[0]));
-		double YMax = (a1[1] * a1_cells + a2[1] * a2_cells) / 2 + 1 * (abs(a1[1]) + abs(a2[1]));
-		double YMin = (a1[1] * a1_cells + a2[1] * a2_cells) / 2 - 1 * (abs(a1[1]) + abs(a2[1]));
-		int k = 0;
-		double step = (XMax - XMin) / 750;
-		double original_position[3] = { Tip_in->r[0], Tip_in->r[1], Tip_in->r[2] };
-
-		std::ofstream out("Surface.dat");
-		std::streambuf *coutbuf = std::cout.rdbuf(); //save old buf
-		std::cout.rdbuf(out.rdbuf()); //redirect std::cout to AFM.dat
-
-		cout << "x " << "y " << "z " << "U " << endl;
-
-		Tip_in->MoveTip(XMin - Tip_in->r[0], YMin - Tip_in->r[1], 0);
-
-		Tip_in->MoveTip(0, YMin - Tip_in->r[1], 0);
-		while (Tip_in->r[1] < YMax)
-		{
-			Tip_in->MoveTip(XMin - Tip_in->r[0], 0, 0);
-			while (Tip_in->r[0] < XMax)
-			{
-				Average += PerpLJForce(Tip_in);
-				Tip_in->MoveTip(step * 10, 0, 0);
-				k++;
-			}
-			Tip_in->MoveTip(0, step * 10, 0);
-		}
-
-		Average = Average / k;
-		Tip_in->MoveTip(0, YMin - Tip_in->r[1], 0);
-
-		while (Tip_in->r[1] < YMax)
-		{
-			Tip_in->MoveTip(XMin - Tip_in->r[0], 0, 0);
-			while (Tip_in->r[0] < XMax)
-			{
-				Tip_in->Print(PerpLJForce(Tip_in));
-				Tip_in->MoveTip(step, 0, 0);
-			}
-			Tip_in->MoveTip(0, step, 0);
-		}
-
-		cout << endl;
-		std::cout.rdbuf(coutbuf); //reset to standard output again
-		Tip_in->MoveTip(original_position[0] - Tip_in->r[0], original_position[1] - Tip_in->r[1], original_position[2] - Tip_in->r[2]);
-	}
-
-	void PerpForceCurve(Tip* Tip_in)
-	{
-		double Average = 0;
-		double XMax = (((a1_cells / 2) + 0.75)*a1[0] + ((a2_cells / 2) + 0.75)*a2[0]);
-		double XMin = (((a1_cells / 2) - 1.25)*a1[0] + ((a2_cells / 2) - 1.25)*a2[0]);
-		double YMax = abs(a1[1]) + abs(a2[1]);
-		double YMin = 0;
-		double ZMax = 4;
-		double ZMin = 3;
-		int k = 0;
-		double zstep = (ZMax - ZMin) / 750;
-		double xystep = (XMax - XMin) / 750;
-		double original_position[3] = { Tip_in->r[0], Tip_in->r[1], Tip_in->r[2] };
-
-		std::ofstream out("Force_Curve.dat");
-		std::streambuf *coutbuf = std::cout.rdbuf(); //save old buf
-		std::cout.rdbuf(out.rdbuf()); //redirect std::cout to AFM.dat
-
-		cout << "x " << "y " << "U " << endl;
-
-		Tip_in->MoveTip(XMin - Tip_in->r[0], YMin - Tip_in->r[1], ZMin - Tip_in->r[2]);
-
-		while (Tip_in->r[2] < ZMax)
-		{
-			Tip_in->MoveTip(0, YMin - Tip_in->r[1], 0);
-
-			while (Tip_in->r[1] < YMax)
-			{
-				Tip_in->MoveTip(XMin - Tip_in->r[0], 0, 0);
-				while (Tip_in->r[0] < XMax)
-				{
-					Average += PerpLJForce(Tip_in);
-					k++;
-					Tip_in->MoveTip(xystep * 10, 0, 0);
-				}
-				Tip_in->MoveTip(0, xystep * 10, 0);
-			}
-			Average = Average / k;
-
-			Tip_in->MoveTip(XMin - Tip_in->r[0], YMin - Tip_in->r[1], 0);
-
-			while (Tip_in->r[0] < XMax)
-			{
-
-				Tip_in->Print(PerpLJForce(Tip_in) - Average);
-				Tip_in->MoveTip(xystep, 0, 0);
-			}
-
-			Average = 0;
-			k = 0;
-			Tip_in->MoveTip(XMin - Tip_in->r[0], 0, zstep);
-		}
-
-		cout << endl;
-		std::cout.rdbuf(coutbuf); //reset to standard output again
-		Tip_in->MoveTip(original_position[0] - Tip_in->r[0], original_position[1] - Tip_in->r[1], original_position[2] - Tip_in->r[2]);
-	}
-
 };
 
 #endif

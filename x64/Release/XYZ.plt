@@ -14,4 +14,4 @@ set cblabel 'F [nN]'
 
 
 set parametric;
-plot 'Surface.dat' using 1:2:4 notitle palette, 'Locations.dat' using 1:2:3 notitle pt 7
+plot 'Surface.dat' using 1:2:4 notitle palette, 'Locations.dat' using 1:2:3:3 notitle palette pt 7

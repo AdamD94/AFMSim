@@ -11,8 +11,8 @@ set origin -0.033, 0
 
 unset cblabel
 set xlabel 'x [Å]'
-set ylabel 'z [Å]'
+set ylabel 'y [Å]'
 set cblabel 'F [nN]'
 
 set pm3d map interpolate 2,2
-splot 'Surface.dat' using 1:2:4 notitle
+splot 'Surface.dat' using 1:2:4:4 notitle palette

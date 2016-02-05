@@ -1,6 +1,7 @@
-﻿  Generating code
-  2 of 239 functions ( 0.8%) were compiled, the rest were copied from previous compilation.
+﻿  Main.cpp
+  Generating code
+  2 of 244 functions ( 0.8%) were compiled, the rest were copied from previous compilation.
     0 functions were new in current compilation
-    0 functions had inline decision re-evaluated but remain unchanged
+    3 functions had inline decision re-evaluated but remain unchanged
   Finished generating code
   AFM_Simulation.vcxproj -> C:\dev\AFM_Simulation\x64\Release\AFM_Simulation.exe

@@ -1,7 +1,6 @@
 #ifndef Class_Definitions
 #define Class_Definitions
 
-
 class Atom
 {
 public:
@@ -90,6 +89,7 @@ class Tip
 public:
 	Atom* atom;
 	double r[3];
+	int atom_count=0;
 
 	Tip(double r0_in, double r1_in, double r2_in)
 	{
@@ -101,43 +101,40 @@ public:
 
 	double PerpLJForce(Atom* Other_Atom)
 	{
-		Atom* Temp = atom;
+		Atom* temp = atom;
 		double LJForce = 0;
 
-		while (atom != NULL)
+		while (temp != NULL)
 		{
-			LJForce += atom->PerpLJForce(Other_Atom);
-			atom = atom->Next;
+			LJForce += temp->PerpLJForce(Other_Atom);
+			temp = temp->Next;
 		}
-		atom = Temp;
 		return LJForce;
 	}
 
 	double LJForce(Atom* Other_Atom)
 	{
-		Atom* Temp = atom;
+		Atom* temp = atom;
 		double LJForce = 0;
 
-		while (atom != NULL)
+		while (temp != NULL)
 		{
-			LJForce += atom->LJForce(Other_Atom);
-			atom = atom->Next;
+			LJForce += temp->LJForce(Other_Atom);
+			temp = temp->Next;
 		}
-		atom = Temp;
 		return LJForce;
 	}
 
 	double LJPot(Atom* Other_Atom)
 	{
-		Atom* Temp = atom;
+		Atom* temp = atom;
 		double LJPot = 0;
 
-		while (atom != NULL)
+		while (temp != NULL)
 		{
-			LJPot += atom->LJPot(Other_Atom);
-			atom = atom->Next;
+			LJPot += temp->LJPot(Other_Atom);
+			temp = temp->Next;
 		}
-		atom = Temp;
 		return LJPot;
 	}
 
@@ -153,7 +150,7 @@ public:
 			{
 				atom = atom->Next;
 			}
-
+			atom_count++;
 			atom->Next = new Atom(Atom_in.r[0] + r[0], Atom_in.r[1] + r[1], Atom_in.r[2] + r[2], Atom_in.e, Atom_in.s);
 			atom = Temp;
 		}
@@ -171,6 +168,7 @@ public:
 			{
 				atom = atom->Next;
 			}
+			atom_count++;
 			atom->Next = new Atom(Atom_in->r[0] + r[0], Atom_in->r[1] + r[1], Atom_in->r[2] + r[2], Atom_in->e, Atom_in->s);
 			atom = Temp;
 		}
@@ -216,15 +214,14 @@ public:
 
 	void MoveTip(double x_in, double y_in, double z_in)
 	{
-		Atom* Temp = atom;
-		while (atom != NULL)
+		Atom* temp = atom;
+		while (temp != NULL)
 		{
-			atom->r[0] += x_in;
-			atom->r[1] += y_in;
-			atom->r[2] += z_in;
-			atom = atom->Next;
+			temp->r[0] += x_in;
+			temp->r[1] += y_in;
+			temp->r[2] += z_in;
+			temp = temp->Next;
 		}
-		atom = Temp;
 		r[0] += x_in;
 		r[1] += y_in;
 		r[2] += z_in;
@@ -503,56 +500,52 @@ public:
 	void Print()
 	{
 		int atom_number = 0;
-		Atom* Temp = first_atom;
-		while (first_atom != NULL)
+		Atom* temp = first_atom;
+		while (temp != NULL)
 		{
-			first_atom->Print(atom_number);
-			first_atom = first_atom->Next;
+			temp->Print(atom_number);
+			temp = temp->Next;
 			atom_number++;
 		}
-		first_atom = Temp;
 	}
 
 	double PerpLJForce(Tip* Tip_in)
 	{
-		Atom* Temp = first_atom;
+		Atom* temp = first_atom;
 		double Force = 0;
 
-		while (first_atom != NULL)
+		while (temp != NULL)
 		{
-			Force += Tip_in->PerpLJForce(first_atom);
-			first_atom = first_atom->Next;
+			Force += Tip_in->PerpLJForce(temp);
+			temp = temp->Next;
 		}
-		first_atom = Temp;
 		return Force;
 	}
 
 	double LJPot(Tip* Tip_in)
 	{
-
-		Atom* Temp = first_atom;
+		Atom* temp = first_atom;
 		double pot = 0;
 
-		while (first_atom != NULL)
+		while (temp != NULL)
 		{
-			pot += Tip_in->LJPot(first_atom);
-			first_atom = first_atom->Next;
+			pot += Tip_in->LJPot(temp);
+			temp = temp->Next;
 		}
-		first_atom = Temp;
 		return pot;
 	}
 	
 	double LJForce(Tip* Tip_in)
-	{
-		Atom* Temp = first_atom;
+	{	
+		
+		Atom* temp = first_atom;
 		double Force = 0;
 
-		while (first_atom != NULL)
+		while (temp != NULL)
 		{
-			Force += Tip_in->LJForce(first_atom);
-			first_atom = first_atom->Next;
+			Force += Tip_in->LJForce(temp);
+			temp = temp->Next;
 		}
-		first_atom = Temp;
 		return Force;
 	}
 
@@ -563,6 +556,7 @@ class Surface
 public:
 
 	Unit_Cell* first_cell;
+	int cell_count = 0;
 
 	double a1[3];	//////////////////////////////////////////////////////////
 	double a2[3];	//		Lattice vectors a1, a2 and a3 follow from		//
@@ -570,6 +564,7 @@ public:
 	int a1_cells;	//////////////////////////////////////////////////////////
 	int a2_cells;
 	int a3_cells;
+	int atom_count = 0;
 
 	Surface(double a1_in[3], double a2_in[3], double a3_in[3], int a1_cells_in, int a2_cells_in, int a3_cells_in, Unit_Cell* Cell_in)
 	{
@@ -593,7 +588,6 @@ public:
 
 		Tile_Space();
 		Fill_Tiled_Space(Cell_in);
-	
 
 	}
 
@@ -612,6 +606,7 @@ public:
 					}
 					temp_cell = first_cell;
 					first_cell = new Unit_Cell((a1[0] * i + a2[0] * j + a3[0] * (k % 2)), (a1[1] * i + a2[1] * j + a3[1] * (k % 2)), (a1[2] * i + a2[2] * j + a3[2] * k));
+					cell_count++;
 					first_cell->Next = temp_cell;
 				}
 			}
@@ -645,6 +640,7 @@ public:
 			while (Cell_in->first_atom != NULL)
 			{
 				first_cell->Add_Atom(Cell_in->first_atom);
+				atom_count++;
 				Cell_in->first_atom = Cell_in->first_atom->Next;
 			}
 			Cell_in->first_atom = temp_atom;
@@ -659,55 +655,51 @@ public:
 		std::streambuf *coutbuf = std::cout.rdbuf(); //save old buf
 		std::cout.rdbuf(out.rdbuf()); //redirect std::cout to Surface.dat
 
-		Unit_Cell* temp_cell = first_cell;
-		while (first_cell != NULL)
+		Unit_Cell* temp = first_cell;
+		while (temp != NULL)
 		{
-			first_cell->Print();
-			first_cell = first_cell->Next;
+			temp->Print();
+			temp = temp->Next;
 		}
-		first_cell = temp_cell;
 		std::cout.rdbuf(coutbuf); //reset to standard output again
 	}
 
 	double LJPot(Tip* Tip_in)
 	{
-		Unit_Cell* Temp = first_cell;
+		Unit_Cell* temp = first_cell;
 		double LJPot = 0;
 
-		while (first_cell != NULL)
+		while (temp != NULL)
 		{
-			LJPot += first_cell->LJPot(Tip_in);
-			first_cell = first_cell->Next;
+			LJPot += temp->LJPot(Tip_in);
+			temp = temp->Next;
 		}
-		first_cell = Temp;
 		return LJPot;
 	}
 
 	double LJForce(Tip* Tip_in)
 	{
-		Unit_Cell* Temp = first_cell;
+		Unit_Cell* temp = first_cell;
 		double Force = 0;
 
-		while (first_cell != NULL)
+		while (temp != NULL)
 		{
-			Force += first_cell->LJForce(Tip_in);
-			first_cell = first_cell->Next;
+			Force += temp->LJForce(Tip_in);
+			temp = temp->Next;
 		}
-		first_cell = Temp;
 		return Force;
 	}
 
 	double PerpLJForce(Tip* Tip_in)
 	{
-		Unit_Cell* Temp = first_cell;
+		Unit_Cell* temp = first_cell;
 		double Force = 0;
 
-		while (first_cell != NULL)
+		while (temp != NULL)
 		{
-			Force += first_cell->PerpLJForce(Tip_in);
-			first_cell = first_cell->Next;
+			Force += temp->PerpLJForce(Tip_in);
+			temp = temp->Next;
 		}
-		first_cell = Temp;
 		return Force;
 	}
 
@@ -730,6 +722,114 @@ public:
 		std::cout.rdbuf(out.rdbuf()); //redirect std::cout to Surface.dat
 		cout << buffer.str() << endl;
 		std::cout.rdbuf(coutbuf); //reset to standard output again
+	}
+
+	void TipHeight(Tip* Tip_in, double Setpoint, double ZRes, double FRes)
+	{
+		double XMax = (a1[0] * a1_cells + a2[0] * a2_cells) / 2 + 1 * (abs(a1[0]) + abs(a2[0]));
+		double XMin = (a1[0] * a1_cells + a2[0] * a2_cells) / 2 - 1 * (abs(a1[0]) + abs(a2[0]));
+		double YMax = (a1[1] * a1_cells + a2[1] * a2_cells) / 2 + 1 * (abs(a1[1]) + abs(a2[1]));
+		double YMin = (a1[1] * a1_cells + a2[1] * a2_cells) / 2 - 1 * (abs(a1[1]) + abs(a2[1]));
+		double Z = Tip_in->r[2];
+		std::stringstream buffer;
+		std::ofstream out("Tip_Height.dat");
+
+		std::streambuf *coutbuf = std::cout.rdbuf(); //save old buf
+		std::cout.rdbuf(buffer.rdbuf());
+	
+		TipHeightMap(Tip_in, XMax, XMin, YMax, YMin, Z, Setpoint, ZRes, FRes);
+
+		std::cout.rdbuf(out.rdbuf()); //redirect std::cout to Surface.dat
+		cout << buffer.str() << endl;
+		std::cout.rdbuf(coutbuf); //reset to standard output again
+	}
+
+	double TipHeightCalc(Tip* Tip_in, double Setpoint, double ZRes, double FRes)
+	{
+		double Force = LJForce(Tip_in);
+		bool check1 = 0;
+		bool check2 = 0;
+
+		while (Force > Setpoint+FRes || Force < Setpoint-FRes)
+		{
+		
+			if (Force > Setpoint)
+			{
+				Tip_in->MoveTip(0, 0, ZRes);
+				check1 = 1;
+			}
+
+			else
+			{
+				Tip_in->MoveTip(0, 0, -1.0*ZRes);
+				check2 = 1;
+			}
+
+			if (check1 == 1 && check2 == 1)
+			{
+				ZRes = ZRes / 10;
+				check1 = 0;
+				check2 = 0;
+			}
+			Force = LJForce(Tip_in);
+		}
+		return(Tip_in->r[2]);
+	}
+
+	void TipHeightMap(Tip* Tip_in, double XMax, double XMin, double YMax, double YMin, double ZIni, double Setpoint, double ZRes, double FRes)
+	{
+		double Average = 0;
+		int progress = 0;
+		int i = 0;
+
+		double xstep = (XMax - XMin) / 250;
+		double ystep = (YMax - YMin) / 250;
+
+		if (XMax == XMin)
+			xstep = 1;
+
+		if (YMax == YMin)
+			ystep = 1;
+
+
+		double original_position[3] = { Tip_in->r[0], Tip_in->r[1], Tip_in->r[2] };
+
+		cout << "x [Å] " << "y [Å] " << "z [Å] " << "U [nN] " << endl;
+
+		Tip_in->MoveTip(XMin - Tip_in->r[0], YMin - Tip_in->r[1], ZIni - Tip_in->r[2]);
+
+		while (Tip_in->r[0] <= XMax)
+		{
+			while (Tip_in->r[1] <= YMax)
+			{
+				Average += TipHeightCalc(Tip_in, Setpoint, ZRes, FRes);
+				i++;
+				Tip_in->MoveTip(0, ystep * 25, 0);
+			}
+			Tip_in->MoveTip(xstep * 25, YMin - Tip_in->r[1], 0);
+		}
+
+		Average = Average / i;
+		Tip_in->MoveTip(XMin - Tip_in->r[0], YMin - Tip_in->r[1], 0);
+
+		while (Tip_in->r[0] <= XMax)
+		{
+			while (Tip_in->r[1] <= YMax)
+			{
+				Tip_in->Print(TipHeightCalc(Tip_in, Setpoint, ZRes, FRes) - Average);
+				Tip_in->MoveTip(0, ystep, 0);
+			}
+			Tip_in->MoveTip(xstep, YMin - Tip_in->r[1], 0);
+
+			progress = (int)((Tip_in->r[0]-XMin) * 100 / (XMax-XMin));
+			printf("Topology %d%% Complete\r", progress);
+			if (YMax != YMin)
+			{
+				cout << "\n";
+			}
+		}
+		printf("\n");
+		Tip_in->MoveTip(original_position[0] - Tip_in->r[0], original_position[1] - Tip_in->r[1], original_position[2] - Tip_in->r[2]);
 	}
 
 	void ForceCurve(Tip* Tip_in, double ZMin, double ZMax)
@@ -755,7 +855,7 @@ public:
 	void XYZForce(Tip* Tip_in, double XMax, double XMin, double YMax, double YMin, double ZMax, double ZMin)
 	{
 		double Average = 0;
-
+		int progress = 0;
 		int i = 0;
 		double xstep = (XMax - XMin) / 250;
 		double ystep = (YMax - YMin) / 250;
@@ -805,15 +905,21 @@ public:
 					cout << "\n";
 				}
 			}
+
+			progress = (int)((Tip_in->r[2] - ZMin) * 100 / (ZMax - ZMin)) ;
+			printf("Force calculation %d%% Complete\r", progress);
+
 			Tip_in->MoveTip(XMin-Tip_in->r[0], YMin - Tip_in->r[1], zstep);
 			cout << "\n";
 			Average = 0;
 			i = 0;
 		}
-
-		
+		printf("\n");
 		Tip_in->MoveTip(original_position[0] - Tip_in->r[0], original_position[1] - Tip_in->r[1], original_position[2] - Tip_in->r[2]);
 	}
+	
+
+
 };
 
 #endif

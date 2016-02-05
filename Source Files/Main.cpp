@@ -42,6 +42,9 @@ int	main(int argc, char* argv[])
 	cout << "Enter Force Setpoint (nN):" << endl; //Height of tip above sample is set by user
 	cin >> Setpoint;
 
+	cout << "Enter Height for surface force (Angstroms):" << endl; //Height of tip above sample is set by user
+	cin >> z_0;
+
 	clock_t tic = clock();	// Read in current clock cycle
 
 	Tip* Tip1 = new Tip(0, 0, z_0);
@@ -64,13 +67,13 @@ int	main(int argc, char* argv[])
 	
 	surface->TipHeight(Tip1, Setpoint, ZRes, FRes);
 
-/*
+
 	surface->ForceCurve(Tip1, z_0, z_0+1);
 	cout << "Force curve complete" << endl;
 
 	surface->SurfaceForce(Tip1);
 	cout << "Surface force complete" << endl;
-*/
+
 	clock_t toc = clock(); // Read in current clock cycle, subtract and divide by clock frequency for time elapsed in seconds
 	cout << "Simulation Complete \nElapsed: " << (double)(toc - tic) / CLOCKS_PER_SEC << "  seconds" << endl;
 	cin.ignore();

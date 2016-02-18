@@ -11,8 +11,8 @@ using namespace std;
 
 int	main(int argc, char* argv[])
 {
-	int a1_cells = 14;		// Number of cells to be generated in the a1, a2 and a3 directions
-	int	a2_cells = 14;		
+	int a1_cells = 20;		// Number of cells to be generated in the a1, a2 and a3 directions
+	int	a2_cells = 20;		
 	int a3_cells = 1;	
 
 	double a = 1.4;
@@ -24,7 +24,7 @@ int	main(int argc, char* argv[])
 	double a2[3] = {a* 3.0 / 2.0	, a *-sqrt(3.0) / 2.0	,a*  0.0 };	
 	double a3[3] = {a				, 0						,c* -1.0 };	
 
-	double ZRes = 0.1; // vertical resolution in angstroms
+	double ZStep = 0.05; // vertical resolution in angstroms
 	double FRes = 0.0005; //Tolerance on force measurement
 	double Setpoint = 0; //Force to be followed by tip nanoNewtons
 
@@ -53,20 +53,28 @@ int	main(int argc, char* argv[])
 				
 	Atom* Carbon1 = new Atom(0.0, 0.0, 0.0);		// Atoms to be added to the basis, coordinates are in terms of a1, a2, a3
 	Atom* Carbon2 = new Atom((2.0/3.0), (2.0/3.0), 0.0);
+	Atom* Carbon3 = new Atom(0.0, 0.0, 0.0);
 
 	Unit_Cell* simple_cell = new Unit_Cell();	// Unit cell to be tiled over the crystal
 		simple_cell->Add_Atom(Carbon1);			// Constiuent atoms of unit cells
 		simple_cell->Add_Atom(Carbon2);
 
+	Unit_Cell* Defect = new Unit_Cell(40.0, 0.0, 1.0);
+	Defect->Add_Atom(Carbon3);
+
 	Surface* surface = new Surface(a1, a2, a3, a1_cells, a2_cells, a3_cells, simple_cell);	//Surface generation, unit cell is tiled over space in the directions defined by a1,a2,a3
+	
+	surface->Add_Cell(Defect);
 
 	cout << "Computing" << endl;
 
-	cout << "Cell count: "<<surface->cell_count << endl;
+	cout << "Cell count: " << surface->cell_count << endl;
+
 	surface->Print();
 	
-	surface->TipHeight(Tip1, Setpoint, ZRes, FRes);
+	surface->TipHeight(Tip1, Setpoint, ZStep, FRes, 3);
 
+	
 
 	surface->ForceCurve(Tip1, z_0, z_0+1);
 	cout << "Force curve complete" << endl;

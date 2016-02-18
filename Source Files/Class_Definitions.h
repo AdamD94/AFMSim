@@ -157,6 +157,9 @@ public:
 
 	double LJForce(Atom* Other_Atom)
 	{
+		if (Dist(Other_Atom) > 3 * atom->s)
+			return(0);
+
 		Atom* temp = atom;
 		double LJForce = 0;
 
@@ -179,6 +182,11 @@ public:
 			temp = temp->Next;
 		}
 		return LJPot;
+	}
+
+	double Dist(Atom* Other_Atom)
+	{
+		return (double)sqrt(pow((Other_Atom->r[2] - r[2]), 2) + pow((Other_Atom->r[1] - r[1]), 2) + pow((Other_Atom->r[0] - r[0]), 2));
 	}
 
 	void Print()
@@ -633,7 +641,7 @@ private:
 		first_cell = temp_cell;
 	}
 
-	void TipHeightMap(Tip* Tip_in, double XMax, double XMin, double YMax, double YMin, double ZIni, double Setpoint, double ZRes, double FRes)
+	void TipHeightMap(Tip* Tip_in, double XMax, double XMin, double YMax, double YMin, double ZIni, double Setpoint, double ZStep, double FRes)
 	{
 		double Average = 0;
 		int progress = 0;
@@ -659,7 +667,7 @@ private:
 		{
 			while (Tip_in->r[1] <= YMax)
 			{
-				Average += TipHeightCalc(Tip_in, Setpoint, ZRes, FRes);
+				Average += TipHeightCalc(Tip_in, Setpoint, ZStep, FRes);
 				i++;
 				Tip_in->MoveTip(0, ystep * 25, 0);
 			}
@@ -673,7 +681,7 @@ private:
 		{
 			while (Tip_in->r[1] <= YMax)
 			{
-				Tip_in->Print(TipHeightCalc(Tip_in, Setpoint, ZRes, FRes) - Average);
+				Tip_in->Print(TipHeightCalc(Tip_in, Setpoint, ZStep, FRes) - Average);
 				Tip_in->MoveTip(0, ystep, 0);
 			}
 			Tip_in->MoveTip(xstep, YMin - Tip_in->r[1], 0);
@@ -689,30 +697,34 @@ private:
 		Tip_in->MoveTip(original_position[0] - Tip_in->r[0], original_position[1] - Tip_in->r[1], original_position[2] - Tip_in->r[2]);
 	}
 
-	double TipHeightCalc(Tip* Tip_in, double Setpoint, double ZRes, double FRes)
+	double TipHeightCalc(Tip* Tip_in, double Setpoint, double ZStep, double FRes)
 	{
-		double Force = LJForce(Tip_in);
+		double Error = LJForce(Tip_in)-Setpoint;
 		bool check1 = 0;
 		bool check2 = 0;
+		int i = 0;
 
-		while (Force > Setpoint + FRes || Force < Setpoint - FRes)
+		while (abs(Error) >  FRes)
 		{
 			while ((check1 * check2) != 1)
 			{
-				if (Force > Setpoint)
+				if (Error > 0)
 				{
-					Tip_in->MoveTip(0, 0, ZRes);
+					Tip_in->MoveTip(0, 0, ZStep);
 					check1 = 1;
 				}
 
 				else
 				{
-					Tip_in->MoveTip(0, 0, -1.0*ZRes);
+					Tip_in->MoveTip(0, 0, -1.0*ZStep);
 					check2 = 1;
 				}
-				Force = LJForce(Tip_in);
+				Error = LJForce(Tip_in) - Setpoint;
 			}
-				ZRes = ZRes/5;
+
+		//	printf("%i \n", i);
+		//	i++;
+		    	ZStep = ZStep /5;
 				check1 = 0;
 				check2 = 0;
 		}
@@ -735,6 +747,8 @@ private:
 
 	double LJForce(Tip* Tip_in)
 	{
+	
+
 		Unit_Cell* temp = first_cell;
 		double Force = 0;
 
@@ -803,13 +817,13 @@ public:
 		}
 		std::cout.rdbuf(coutbuf); //reset to standard output again
 	}
-
-	void TipHeight(Tip* Tip_in, double Setpoint, double ZRes, double FRes)
+	 
+	void TipHeight(Tip* Tip_in, double Setpoint, double ZRes, double FRes, double Area)
 	{
-		double XMax = (a1[0] * a1_cells + a2[0] * a2_cells) / 2 + 1 * (abs(a1[0]) + abs(a2[0]));
-		double XMin = (a1[0] * a1_cells + a2[0] * a2_cells) / 2 - 1 * (abs(a1[0]) + abs(a2[0]));
-		double YMax = (a1[1] * a1_cells + a2[1] * a2_cells) / 2 + 1 * (abs(a1[1]) + abs(a2[1]));
-		double YMin = (a1[1] * a1_cells + a2[1] * a2_cells) / 2 - 1 * (abs(a1[1]) + abs(a2[1]));
+		double XMax = ((a1[0] * a1_cells + a2[0] * a2_cells) / 2 + Area * (abs(a1[0]) + abs(a2[0])));
+		double XMin = ((a1[0] * a1_cells + a2[0] * a2_cells) / 2 - Area * (abs(a1[0]) + abs(a2[0])));
+		double YMax = ((a1[1] * a1_cells + a2[1] * a2_cells) / 2 + Area * (abs(a1[1]) + abs(a2[1])));
+		double YMin = ((a1[1] * a1_cells + a2[1] * a2_cells) / 2 - Area * (abs(a1[1]) + abs(a2[1])));
 		double Z = Tip_in->r[2];
 		std::stringstream buffer;
 		std::ofstream out("Tip_Height.dat");
@@ -940,6 +954,17 @@ public:
 		Tip_in->MoveTip(original_position[0] - Tip_in->r[0], original_position[1] - Tip_in->r[1], original_position[2] - Tip_in->r[2]);
 	}
 	
+	void Add_Cell(Unit_Cell* Cell_In)
+	{
+		Unit_Cell* Temp=first_cell;
+		while (first_cell->Next != NULL)
+			first_cell = first_cell->Next;
+
+		first_cell->Next = Cell_In;
+
+		first_cell = Temp;
+	}
+
 };
 
 #endif

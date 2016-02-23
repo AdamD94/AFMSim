@@ -87,18 +87,20 @@ public:
 
 };
 
-class Tip
+class VestaObject
 {
 private:
-	Atom* atom;
+
+	double orientation[4][4];
 
 public:
 
+	Atom* atom;
 	int atom_count=0;
 	double r[3];
 
 
-	Tip(double r0_in, double r1_in, double r2_in)
+	VestaObject(double r0_in, double r1_in, double r2_in)
 	{
 		atom = NULL;
 		r[0] = r0_in;
@@ -227,7 +229,7 @@ public:
 		cout << r[0] << " " << r[1] << " " << r[2] << " " << var1 << " " << var2 << "\n";
 	}
 
-	void MoveTip(double x_in, double y_in, double z_in)
+	void Move(double x_in, double y_in, double z_in)
 	{
 		Atom* temp = atom;
 		while (temp != NULL)
@@ -242,7 +244,7 @@ public:
 		r[2] += z_in;
 	}
 
-	void ImportTip(string filename_in)
+	void Import(string filename_in)
 	{
 
 		string line;
@@ -250,12 +252,20 @@ public:
 		string xyz_filename = filename_in;
 		string element;
 		ifstream fin;
-		double orientation[4][4];
-		double r_in[3];
-		double r_rot[3];
+		double rotation[4][4];
 		double epsilon = 0;
 		double sigma = 0;
 		int i = 1;
+		Atom* Temp = new Atom(0,0,0);
+		double initial[3];
+
+		for (int i = 0;i < 3;i++)
+		{
+			initial[i] = r[i];
+			r[i] = 0;
+		}
+
+
 
 		vesta_filename.erase(0, vesta_filename.find_last_of("\\", vesta_filename.length()) + 1);
 		vesta_filename.erase(vesta_filename.find_last_of(".", vesta_filename.length() + 1), vesta_filename.length() + 1);
@@ -284,10 +294,7 @@ public:
 
 		for (int i = 0; i < 4; i++)
 		{
-			for (int j = 0; j < 4; j++)
-			{
-				fin >> orientation[i][j];
-			}
+		 fin >> rotation[i][0]  >> rotation[i][1]  >> rotation[i][2]  >> rotation[i][3];
 		}
 
 		fin.close();
@@ -299,39 +306,32 @@ public:
 			getline(fin, line);
 			getline(fin, line);
 
-			while (fin>>element>>r_in[0]>>r_in[1]>>r_in[2])
+			while (fin>>element>>Temp->r[0]>> Temp->r[1]>> Temp->r[2])
 			{
-				r_rot[0] = orientation[0][0] * r_in[0] + orientation[0][1] * r_in[1] + orientation[0][2] * r_in[2];
-				r_rot[1] = orientation[1][0] * r_in[0] + orientation[1][1] * r_in[1] + orientation[1][2] * r_in[2];
-				r_rot[2] = orientation[2][0] * r_in[0] + orientation[2][1] * r_in[1] + orientation[2][2] * r_in[2];
 
 				if (element.compare("C") == 0)
 				{
-					epsilon = 1.0456*pow(10, -21);	//epsilon	[Joules]	(LJ Parameter) 
-					sigma = 4.0;					//sigma		[Angstroms] (LJ Parameter) 
-		
+					Temp->e = 1.0456*pow(10, -21);	//epsilon	[Joules]	(LJ Parameter) 
+					Temp->s = 4.0;					//sigma		[Angstroms] (LJ Parameter) 
 				}
-
 				else if (element.compare("Pt") == 0)
 				{
-					epsilon = 3.534*pow(10, -21);		//epsilon	[Joules]	(LJ Parameter) 
-					sigma = 2.95;					//sigma		[Angstroms] (LJ Parameter) 
+					Temp->e = 3.534*pow(10, -21);		//epsilon	[Joules]	(LJ Parameter) 
+					Temp->s = 2.95;					//sigma		[Angstroms] (LJ Parameter) 
 				}
 				else
 				{
 					cout << "Lennard jones parameters not stored for: " << element << ". Assuming Carbon"<< endl;
-					cout << "Call ImportTip(filename, epsilon, sigma)" << endl;
+					cout << "Call Import(filename, epsilon, sigma)" << endl;
 					element = "C";
-					epsilon = 1.0456*pow(10, -21);	//epsilon	[Joules]	(LJ Parameter) 
-					sigma = 4.0;
-
+					Temp->e = 1.0456*pow(10, -21);	//epsilon	[Joules]	(LJ Parameter) 
+					Temp->s = 4.0;
 				}
 
-				cout << "Atom " << i << ": " << element << endl;
+				cout << "Atom " << setw(2) << i << ": " << element << endl;
 				i++;
 
-				Atom temp(r_rot[0], r_rot[2], r_rot[1], epsilon, sigma);
-				Add_Atom(temp);
+				Add_Atom(Temp);
 			}
 		}
 		else
@@ -342,10 +342,52 @@ public:
 		}
 		fin.close();
 	
+		Rotate(rotation);
+
+		double rotation2[4][4] =
+		{
+		{1,		0,	  0,	 0},
+		{0,		0,	 -1,	 0},
+		{0,	    1,	  0,	 0},
+		{0,		0,	  0,	 0}
+		};
+		Rotate(rotation2);
+
+		for (int i = 0;i < 3;i++)
+			r[i] = initial[i];
+		
+
 		ResetOrigin();
+		
 	}
 
-	void ImportTip(string filename_in, double epsilon, double sigma)
+	void Rotate(double rotation[4][4])
+	{
+		double r_rot[3];
+		Atom* temp = atom;
+		while (temp != NULL)
+		{
+			r_rot[0] = rotation[0][0] * temp->r[0] + rotation[0][1] * temp->r[1] + rotation[0][2] * temp->r[2];
+			r_rot[1] = rotation[1][0] * temp->r[0] + rotation[1][1] * temp->r[1] + rotation[1][2] * temp->r[2];
+			r_rot[2] = rotation[2][0] * temp->r[0] + rotation[2][1] * temp->r[1] + rotation[2][2] * temp->r[2];
+
+			for (int i = 0;i < 4;i++)
+			{
+				for (int j = 0;j < 4;j++)
+				{
+					orientation[i][j] = rotation[i][j]*orientation[j][i];
+				}
+			}
+
+			temp->r[0] = r_rot[0];
+			temp->r[1] = r_rot[1];
+			temp->r[2] = r_rot[2];
+
+			temp = temp->Next;
+		}
+	}
+
+	void Import(string filename_in, double epsilon, double sigma)
 	{
 
 		string line;
@@ -425,7 +467,7 @@ public:
 	void ResetOrigin()
 	{
 		Atom* temp = atom;
-		double r_min[3] = {1000, 1000, 1000};
+		double r_min[3] = {1000000, 1000000, 1000000};
 
 		while (atom != NULL)
 		{
@@ -529,33 +571,33 @@ public:
 		}
 	}
 
-	double PerpLJForce(Tip* Tip_in)
+	double PerpLJForce(VestaObject* Obj_in)
 	{
 		Atom* temp = first_atom;
 		double Force = 0;
 
 		while (temp != NULL)
 		{
-			Force += Tip_in->PerpLJForce(temp);
+			Force += Obj_in->PerpLJForce(temp);
 			temp = temp->Next;
 		}
 		return Force;
 	}
 
-	double LJPot(Tip* Tip_in)
+	double LJPot(VestaObject* Obj_in)
 	{
 		Atom* temp = first_atom;
 		double pot = 0;
 
 		while (temp != NULL)
 		{
-			pot += Tip_in->LJPot(temp);
+			pot += Obj_in->LJPot(temp);
 			temp = temp->Next;
 		}
 		return pot;
 	}
 	
-	double LJForce(Tip* Tip_in)
+	double LJForce(VestaObject* Obj_in)
 	{	
 		
 		Atom* temp = first_atom;
@@ -563,7 +605,7 @@ public:
 
 		while (temp != NULL)
 		{
-			Force += Tip_in->LJForce(temp);
+			Force += Obj_in->LJForce(temp);
 			temp = temp->Next;
 		}
 		return Force;
@@ -641,7 +683,7 @@ private:
 		first_cell = temp_cell;
 	}
 
-	void TipHeightMap(Tip* Tip_in, double XMax, double XMin, double YMax, double YMin, double ZIni, double Setpoint, double ZStep, double FRes)
+	void TipHeightMap(VestaObject* Obj_in, double XMax, double XMin, double YMax, double YMin, double ZIni, double Setpoint, double ZStep, double FRes)
 	{
 		double Average = 0;
 		int progress = 0;
@@ -656,37 +698,36 @@ private:
 		if (YMax == YMin)
 			ystep = 1;
 
+		double original_position[3] = { Obj_in->r[0], Obj_in->r[1], Obj_in->r[2] };
 
-		double original_position[3] = { Tip_in->r[0], Tip_in->r[1], Tip_in->r[2] };
+		cout << "x [Å] " << "y [Å] " << "z [Å] " << "dz [pm] " << endl;
 
-		cout << "x [Å] " << "y [Å] " << "z [Å] " << "U [nN] " << endl;
+		Obj_in->Move(XMin - Obj_in->r[0], YMin - Obj_in->r[1], ZIni - Obj_in->r[2]);
 
-		Tip_in->MoveTip(XMin - Tip_in->r[0], YMin - Tip_in->r[1], ZIni - Tip_in->r[2]);
-
-		while (Tip_in->r[0] <= XMax)
+		while (Obj_in->r[0] <= XMax)
 		{
-			while (Tip_in->r[1] <= YMax)
+			while (Obj_in->r[1] <= YMax)
 			{
-				Average += TipHeightCalc(Tip_in, Setpoint, ZStep, FRes);
+				Average += TipHeightCalc(Obj_in, Setpoint, ZStep, FRes);
 				i++;
-				Tip_in->MoveTip(0, ystep * 25, 0);
+				Obj_in->Move(0, ystep * 25, 0);
 			}
-			Tip_in->MoveTip(xstep * 25, YMin - Tip_in->r[1], 0);
+			Obj_in->Move(xstep * 25, YMin - Obj_in->r[1], 0);
 		}
 
 		Average = Average / i;
-		Tip_in->MoveTip(XMin - Tip_in->r[0], YMin - Tip_in->r[1], 0);
+		Obj_in->Move(XMin - Obj_in->r[0], YMin - Obj_in->r[1], 0);
 
-		while (Tip_in->r[0] <= XMax)
+		while (Obj_in->r[0] <= XMax)
 		{
-			while (Tip_in->r[1] <= YMax)
+			while (Obj_in->r[1] <= YMax)
 			{
-				Tip_in->Print(TipHeightCalc(Tip_in, Setpoint, ZStep, FRes) - Average);
-				Tip_in->MoveTip(0, ystep, 0);
+				Obj_in->Print(100*(TipHeightCalc(Obj_in, Setpoint, ZStep, FRes) - Average));
+				Obj_in->Move(0, ystep, 0);
 			}
-			Tip_in->MoveTip(xstep, YMin - Tip_in->r[1], 0);
+			Obj_in->Move(xstep, YMin - Obj_in->r[1], 0);
 
-			progress = (int)((Tip_in->r[0] - XMin) * 100 / (XMax - XMin));
+			progress = (int)((Obj_in->r[0] - XMin) * 100 / (XMax - XMin));
 			printf("Topology %d%% Complete\r", progress);
 			if (YMax != YMin)
 			{
@@ -694,15 +735,14 @@ private:
 			}
 		}
 		printf("\n");
-		Tip_in->MoveTip(original_position[0] - Tip_in->r[0], original_position[1] - Tip_in->r[1], original_position[2] - Tip_in->r[2]);
+		Obj_in->Move(original_position[0] - Obj_in->r[0], original_position[1] - Obj_in->r[1], original_position[2] - Obj_in->r[2]);
 	}
 
-	double TipHeightCalc(Tip* Tip_in, double Setpoint, double ZStep, double FRes)
+	double TipHeightCalc(VestaObject* Obj_in, double Setpoint, double ZStep, double FRes)
 	{
-		double Error = LJForce(Tip_in)-Setpoint;
+		double Error = LJForce(Obj_in)-Setpoint;
 		bool check1 = 0;
 		bool check2 = 0;
-		int i = 0;
 
 		while (abs(Error) >  FRes)
 		{
@@ -710,42 +750,39 @@ private:
 			{
 				if (Error > 0)
 				{
-					Tip_in->MoveTip(0, 0, ZStep);
+					Obj_in->Move(0, 0, ZStep);
 					check1 = 1;
 				}
 
 				else
 				{
-					Tip_in->MoveTip(0, 0, -1.0*ZStep);
+					Obj_in->Move(0, 0, -1.0*ZStep);
 					check2 = 1;
 				}
-				Error = LJForce(Tip_in) - Setpoint;
+				Error = LJForce(Obj_in) - Setpoint;
 			}
 
-		//	printf("%i \n", i);
-		//	i++;
 		    	ZStep = ZStep /5;
 				check1 = 0;
 				check2 = 0;
 		}
-			
-		return(Tip_in->r[2]);
+		return(Obj_in->r[2]);
 	}
 
-	double LJPot(Tip* Tip_in)
+	double LJPot(VestaObject* Obj_in)
 	{
 		Unit_Cell* temp = first_cell;
 		double LJPot = 0;
 
 		while (temp != NULL)
 		{
-			LJPot += temp->LJPot(Tip_in);
+			LJPot += temp->LJPot(Obj_in);
 			temp = temp->Next;
 		}
 		return LJPot;
 	}
 
-	double LJForce(Tip* Tip_in)
+	double LJForce(VestaObject* Obj_in)
 	{
 	
 
@@ -754,20 +791,20 @@ private:
 
 		while (temp != NULL)
 		{
-			Force += temp->LJForce(Tip_in);
+			Force += temp->LJForce(Obj_in);
 			temp = temp->Next;
 		}
 		return Force;
 	}
 
-	double PerpLJForce(Tip* Tip_in)
+	double PerpLJForce(VestaObject* Obj_in)
 	{
 		Unit_Cell* temp = first_cell;
 		double Force = 0;
 
 		while (temp != NULL)
 		{
-			Force += temp->PerpLJForce(Tip_in);
+			Force += temp->PerpLJForce(Obj_in);
 			temp = temp->Next;
 		}
 		return Force;
@@ -818,53 +855,51 @@ public:
 		std::cout.rdbuf(coutbuf); //reset to standard output again
 	}
 	 
-	void TipHeight(Tip* Tip_in, double Setpoint, double ZRes, double FRes, double Area)
+	void TipHeight(VestaObject* Obj_in, double Setpoint, double ZRes, double FRes, double Area)
 	{
-		double XMax = ((a1[0] * a1_cells + a2[0] * a2_cells) / 2 + Area * (abs(a1[0]) + abs(a2[0])));
-		double XMin = ((a1[0] * a1_cells + a2[0] * a2_cells) / 2 - Area * (abs(a1[0]) + abs(a2[0])));
-		double YMax = ((a1[1] * a1_cells + a2[1] * a2_cells) / 2 + Area * (abs(a1[1]) + abs(a2[1])));
-		double YMin = ((a1[1] * a1_cells + a2[1] * a2_cells) / 2 - Area * (abs(a1[1]) + abs(a2[1])));
-		double Z = Tip_in->r[2];
+		double XMax = round(((a1[0] * a1_cells + a2[0] * a2_cells) / 2 + Area * (abs(a1[0]) + abs(a2[0]))));
+		double XMin = round(((a1[0] * a1_cells + a2[0] * a2_cells) / 2 - Area * (abs(a1[0]) + abs(a2[0]))));
+		double YMax = round(((a1[1] * a1_cells + a2[1] * a2_cells) / 2 + Area * (abs(a1[1]) + abs(a2[1]))));
+		double YMin = round(((a1[1] * a1_cells + a2[1] * a2_cells) / 2 - Area * (abs(a1[1]) + abs(a2[1]))));
+		double Z = Obj_in->r[2];
 		std::stringstream buffer;
-		std::ofstream out("Tip_Height.dat");
+		std::ofstream out("Topology.dat");
 
 		std::streambuf *coutbuf = std::cout.rdbuf(); //save old buf
 		std::cout.rdbuf(buffer.rdbuf());
 
-		TipHeightMap(Tip_in, XMax, XMin, YMax, YMin, Z, Setpoint, ZRes, FRes);
+		TipHeightMap(Obj_in, XMax, XMin, YMax, YMin, Z, Setpoint, ZRes, FRes);
 
 		std::cout.rdbuf(out.rdbuf()); //redirect std::cout to Surface.dat
 		cout << buffer.str() << endl;
 		std::cout.rdbuf(coutbuf); //reset to standard output again
 	}
 
-	void SurfaceForce(Tip* Tip_in)
+	void SurfaceForce(VestaObject* Obj_in, double Area)
 	{
-		double Average = 0;
-		double XMax = (a1[0] * a1_cells + a2[0] * a2_cells) / 2 + 1 * (abs(a1[0]) + abs(a2[0]));
-		double XMin = (a1[0] * a1_cells + a2[0] * a2_cells) / 2 - 1 * (abs(a1[0]) + abs(a2[0]));
-		double YMax = (a1[1] * a1_cells + a2[1] * a2_cells) / 2 + 1 * (abs(a1[1]) + abs(a2[1]));
-		double YMin = (a1[1] * a1_cells + a2[1] * a2_cells) / 2 - 1 * (abs(a1[1]) + abs(a2[1]));
-		double Z = Tip_in->r[2];
+		double XMax = round((a1[0] * a1_cells + a2[0] * a2_cells) / 2 + Area * (abs(a1[0]) + abs(a2[0])));
+		double XMin = round((a1[0] * a1_cells + a2[0] * a2_cells) / 2 - Area * (abs(a1[0]) + abs(a2[0])));
+		double YMax = round((a1[1] * a1_cells + a2[1] * a2_cells) / 2 + Area * (abs(a1[1]) + abs(a2[1])));
+		double YMin = round((a1[1] * a1_cells + a2[1] * a2_cells) / 2 - Area * (abs(a1[1]) + abs(a2[1])));
+		double Z = Obj_in->r[2];
 		std::stringstream buffer;
 		std::ofstream out("Surface.dat");
 
 		std::streambuf *coutbuf = std::cout.rdbuf(); //save old buf
 		std::cout.rdbuf(buffer.rdbuf());
 
-		XYZForce(Tip_in, XMax, XMin, YMax, YMin, Z, Z);
+		XYZForce(Obj_in, XMax, XMin, YMax, YMin, Z, Z);
 				
 		std::cout.rdbuf(out.rdbuf()); //redirect std::cout to Surface.dat
 		cout << buffer.str() << endl;
 		std::cout.rdbuf(coutbuf); //reset to standard output again
 	}
 
-	void ForceCurve(Tip* Tip_in, double ZMin, double ZMax)
+	void ForceCurve(VestaObject* Obj_in, double ZMin, double ZMax)
 	{
 
-		double Average = 0;
-		double XMax = (((a1_cells / 2) + 0.75)*a1[0] + ((a2_cells / 2) + 0.75)*a2[0]);
-		double XMin = (((a1_cells / 2) - 1.25)*a1[0] + ((a2_cells / 2) - 1.25)*a2[0]);
+		double XMax = round((((a1_cells / 2) + 0.75)*a1[0] + ((a2_cells / 2) + 0.75)*a2[0]));
+		double XMin = round((((a1_cells / 2) - 1.25)*a1[0] + ((a2_cells / 2) - 1.25)*a2[0]));
 		double Y = 0;
 		std::stringstream buffer;
 		std::ofstream out("Force_Curve.dat");
@@ -872,14 +907,14 @@ public:
 		std::streambuf *coutbuf = std::cout.rdbuf(); //save old buf
 		std::cout.rdbuf(buffer.rdbuf());
 
-		XYZForce(Tip_in, XMax, XMin, Y, Y, ZMax, ZMin);
+		XYZForce(Obj_in, XMax, XMin, Y, Y, ZMax, ZMin);
 
 		std::cout.rdbuf(out.rdbuf()); //redirect std::cout to Surface.dat
 		cout << buffer.str() << endl;
 		std::cout.rdbuf(coutbuf); //reset to standard output again
 	}
 	
-	void XYZForce(Tip* Tip_in, double XMax, double XMin, double YMax, double YMin, double ZMax, double ZMin)
+	void XYZForce(VestaObject* Obj_in, double XMax, double XMin, double YMax, double YMin, double ZMax, double ZMin)
 	{
 		double Average = 0;
 		int progress = 0;
@@ -897,36 +932,36 @@ public:
 		if (ZMax == ZMin)
 			zstep = 1;
 		
-		double original_position[3] = { Tip_in->r[0], Tip_in->r[1], Tip_in->r[2] };
+		double original_position[3] = { Obj_in->r[0], Obj_in->r[1], Obj_in->r[2] };
 
 		cout << "x [Å] " << "y [Å] " << "z [Å] " << "U [nN] " << endl;
 
-		Tip_in->MoveTip(XMin - Tip_in->r[0], YMin - Tip_in->r[1], ZMin - Tip_in->r[2]);
+		Obj_in->Move(XMin - Obj_in->r[0], YMin - Obj_in->r[1], ZMin - Obj_in->r[2]);
 
-		while (Tip_in->r[2] <= ZMax)
+		while (Obj_in->r[2] <= ZMax)
 		{
-			while (Tip_in->r[0] <= XMax)
+			while (Obj_in->r[0] <= XMax)
 			{
-				while (Tip_in->r[1] <= YMax)
+				while (Obj_in->r[1] <= YMax)
 				{
-					Average += LJForce(Tip_in);
+					Average += PerpLJForce(Obj_in);
 					i++;
-					Tip_in->MoveTip(0, ystep*25, 0);
+					Obj_in->Move(0, ystep*25, 0);
 				}
-				Tip_in->MoveTip(xstep*25, YMin-Tip_in->r[1], 0);
+				Obj_in->Move(xstep*25, YMin- Obj_in->r[1], 0);
 			}
 			
 			Average = Average / i;
-			Tip_in->MoveTip(XMin-Tip_in->r[0], YMin - Tip_in->r[1], 0);
+			Obj_in->Move(XMin- Obj_in->r[0], YMin - Obj_in->r[1], 0);
 
-			while (Tip_in->r[0] <= XMax)
+			while (Obj_in->r[0] <= XMax)
 			{
-				while (Tip_in->r[1] <= YMax)
+				while (Obj_in->r[1] <= YMax)
 				{
-					Tip_in->Print(LJForce(Tip_in)-Average);
-					Tip_in->MoveTip(0, ystep, 0);
+					Obj_in->Print(PerpLJForce(Obj_in)-Average);
+					Obj_in->Move(0, ystep, 0);
 				}
-				Tip_in->MoveTip(xstep, YMin - Tip_in->r[1], 0);
+				Obj_in->Move(xstep, YMin - Obj_in->r[1], 0);
 				if (YMax != YMin)
 				{
 					cout << "\n";
@@ -934,37 +969,50 @@ public:
 
 				if (ZMax < ZMin*1.01)
 				{
-					progress = (int)((Tip_in->r[0] - XMin) * 100 / (XMax - XMin));
+					progress = (int)((Obj_in->r[0] - XMin) * 100 / (XMax - XMin));
 					printf("Force calculation %d%% Complete\r", progress);
 				}
 			}
 
 			if (ZMax > ZMin*1.01)
 			{
-				progress = (int)((Tip_in->r[2] - ZMin) * 100 / (ZMax - ZMin));
+				progress = (int)((Obj_in->r[2] - ZMin) * 100 / (ZMax - ZMin));
 				printf("Force calculation %d%% Complete\r", progress);
 			}
 
-			Tip_in->MoveTip(XMin-Tip_in->r[0], YMin - Tip_in->r[1], zstep);
+			Obj_in->Move(XMin- Obj_in->r[0], YMin - Obj_in->r[1], zstep);
 			cout << "\n";
 			Average = 0;
 			i = 0;
 		}
 		printf("\n");
-		Tip_in->MoveTip(original_position[0] - Tip_in->r[0], original_position[1] - Tip_in->r[1], original_position[2] - Tip_in->r[2]);
+		Obj_in->Move(original_position[0] - Obj_in->r[0], original_position[1] - Obj_in->r[1], original_position[2] - Obj_in->r[2]);
 	}
 	
-	void Add_Cell(Unit_Cell* Cell_In)
+	void Add_Defect(Unit_Cell* Defect_Cell)
 	{
 		Unit_Cell* Temp=first_cell;
 		while (first_cell->Next != NULL)
 			first_cell = first_cell->Next;
 
-		first_cell->Next = Cell_In;
+		first_cell->Next = Defect_Cell;
 
 		first_cell = Temp;
 	}
 
+	void Add_Defect(VestaObject* Object_In)
+	{
+		Atom* TempAtom = Object_In->atom;
+		Unit_Cell* DefectCell = new Unit_Cell(0, 0, 0);
+
+
+		while (TempAtom != NULL)
+		{
+			DefectCell->Add_Atom(TempAtom);
+			TempAtom = TempAtom->Next;
+		}
+		Add_Defect(DefectCell);
+	}
 };
 
 #endif

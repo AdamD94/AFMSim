@@ -12,7 +12,7 @@ set origin -0.033, 0
 
 unset cblabel
 
-set cblabel 'z [pm]'
+set cblabel 'z [Å]'
 
 set lmargin 0
 set tmargin 0
@@ -25,5 +25,5 @@ unset border
 set arrow 3 from 48,-8 to 53,-8 nohead size 1, 90 lw 3 lt -1 front 
 set label "5Å" at 50,-8.75
 
-set pm3d map interpolate 2,2
-splot 'Topology.dat' using 1:2:4:4 notitle palette
+set pm3d map 
+splot 'Topology.dat' using 1:2:3:3 notitle palette

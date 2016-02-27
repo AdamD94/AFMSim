@@ -30,6 +30,12 @@ void MoveFiles(string filename, double setpoint, double z_0, bool defect)
 	rename(OldFile.c_str(), NewFile.c_str());
 
 	OldFile = Directory;
+	OldFile.append("\\Derivative.png");
+	NewFile = Folder;
+	NewFile.append("\\Derivative.png");
+	rename(OldFile.c_str(), NewFile.c_str());
+
+	OldFile = Directory;
 	OldFile.append("\\Topology.dat");
 	NewFile = Folder;
 	NewFile.append("\\Topology.dat");
@@ -63,13 +69,13 @@ void MoveFiles(string filename, double setpoint, double z_0, bool defect)
 	OldFile.append("\\Locations.dat");
 	NewFile = Folder;
 	NewFile.append("\\Locations.dat");
-	rename(OldFile.c_str(), NewFile.c_str());;
+	rename(OldFile.c_str(), NewFile.c_str());
 
 	OldFile = Directory;
-	OldFile.append("\\Tip.dat");
+	OldFile.append("\\VestaObj.dat");
 	NewFile = Folder;
-	NewFile.append("\\Tip.dat");
-	rename(OldFile.c_str(), NewFile.c_str());;
+	NewFile.append("\\VestaObj.dat");
+	rename(OldFile.c_str(), NewFile.c_str());
 }
 
 int	main(int argc, char *argv[])
@@ -78,12 +84,12 @@ int	main(int argc, char *argv[])
 	double a = 1.4;
 	double c = 6.71;
 	double z_0 = 4;
-	double ZStep = 1;
-	double FRes = 0.0005; //Tolerance on force measurement
+	double ZStep = 0.001;
+	double FRes = 0.00005; //Tolerance on force measurement
 	double Setpoint = 0; //Force to be followed by tip nanoNewtons
 
-	int a1_cells = 20;		// Number of cells to be generated in the a1, a2 and a3 directions
-	int	a2_cells = 20;		
+	int a1_cells = 22;		// Number of cells to be generated in the a1, a2 and a3 directions
+	int	a2_cells = 22;		
 	int a3_cells = 1;	
 
 	double a1[3] = {a* 3.0 / 2.0	, a * sqrt(3.0) / 2.0	,a*  0.0 };	// Lattice vectors as in crystallagraphy
@@ -111,12 +117,22 @@ int	main(int argc, char *argv[])
 	cout << "Enter Height for surface force (Angstroms):" << endl; //Height of tip above sample is set by user
 	cin >> z_0;
 
+
+
 	clock_t tic = clock();	// Read in current clock cycle
+
+
 
 	VestaObject* Tip = new VestaObject(0, 0, z_0);
 	Tip->Import(Tip_Filename);
+
 	Atom* Carbon1 = new Atom(0.0, 0.0, 0.0);		// Atoms to be added to the basis, coordinates are in terms of a1, a2, a3
 	Atom* Carbon2 = new Atom((2.0/3.0), (2.0/3.0), 0.0);
+	Atom* TipCarbon = new Atom(0.0, 0.0, -3.0, 1.0456*pow(10, -21), 4.9);		// Atoms to be added to the basis, coordinates are in terms of a1, a2, a3
+
+	Tip->Add_Atom(TipCarbon);
+	Tip->ResetOrigin();
+	Tip->Move(0 - Tip->r[0], 0 - Tip->r[1], z_0 - Tip->r[2]);
 	
 	Unit_Cell* simple_cell = new Unit_Cell();	// Unit cell to be tiled over the crystal
 	simple_cell->Add_Atom(Carbon1);			// Constiuent atoms of unit cells
@@ -129,7 +145,7 @@ int	main(int argc, char *argv[])
 		cout <<" defect "<< endl;
 		Defect_Filename = argv[2];
 		Defect->Import(Defect_Filename);
-		Defect->Move(40.0, 0.0, 1.0);
+		Defect->Move(45-Tip->r[0],0 - Tip->r[1], 1-Tip->r[0]);
 		Defect_Present = 1;
 		surface->Add_Defect(Defect);
 	}
@@ -138,17 +154,23 @@ int	main(int argc, char *argv[])
 	cout << "Cell count: " << surface->cell_count << endl;
 
 	surface->Print();
-	Tip->Print_Atoms();
+	Defect->Print_Atoms();
+
+	Tip->Move(0, 0, 3 - Tip->r[2]);
 
 	surface->TipHeight(Tip, Setpoint, ZStep, FRes, 3);
 	cout << "Topology complete" << endl;
 	system("Topology.plt");
-	
+	system("Derivative.plt");
+
+	Tip->Move(0, 0, z_0 - Tip->r[2]);
+
+
 	surface->ForceCurve(Tip, z_0, z_0+1);
 	cout << "Force curve complete" << endl;
 	system("XZU.plt");
 
-	surface->SurfaceForce(Tip, 1);
+	surface->SurfaceForce(Tip, 3);
 	cout << "Surface force complete" << endl;
 	system("XYU.plt");
 

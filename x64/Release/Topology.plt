@@ -7,6 +7,7 @@ set palette model RGB
 set palette rgb 34,35,36; 
 set palette functions gray, gray, gray
 
+
 set size ratio -1
 set origin -0.033, 0
 

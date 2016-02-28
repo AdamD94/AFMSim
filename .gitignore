@@ -26,4 +26,5 @@
 *.exe
 *.out
 *.app
-x64/Release/AFM.dat
+
+**/Release

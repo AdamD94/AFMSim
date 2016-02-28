@@ -75,9 +75,9 @@ public:
 		if (temp > (3 * s))
 			return 0;
 
-		const double LJ_Truncation = (4.0 / (3*s))*e*(12 * pow((s / (3 * s)), 12) - 6 * pow((s / (3 * s)), 6))*pow(10, 19);
+		const double LJ_Truncation = (24 / (3*s))*e*(2 * pow((s / (3 * s)), 12)- pow((s / (3 * s)), 6))*pow(10, 19);
 
-		return (double) (4.0 / temp)*e*(12 * pow((s / temp), 12) - 6 * pow((s / temp), 6))*pow(10, 19) - LJ_Truncation;
+		return (double) (24 / temp)*e*(2 * pow((s / temp), 12) -  pow((s / temp), 6))*pow(10, 19) - LJ_Truncation;
 	}
 	
 	double PerpLJForce(Atom* Other_Atom)
@@ -161,7 +161,7 @@ public:
 	{
 		if (Dist(Other_Atom) > 5 * atom->s)
 			return(0);
-
+		
 		Atom* temp = atom;
 		double LJForce = 0;
 
@@ -191,59 +191,6 @@ public:
 		return (double)sqrt(pow((Other_Atom->r[2] - r[2]), 2) + pow((Other_Atom->r[1] - r[1]), 2) + pow((Other_Atom->r[0] - r[0]), 2));
 	}
 
-	void Print_Atoms()
-	{
-		Atom* Temp = atom;
-
-		std::ofstream out("VestaObj.dat");
-		std::streambuf *coutbuf = std::cout.rdbuf(); //save old buf
-		std::cout.rdbuf(out.rdbuf()); //redirect std::cout to Surface.dat
-
-		while (atom != NULL)
-		{
-			atom->Print();
-			atom = atom->Next;
-		}
-
-		atom = Temp;
-		std::cout.rdbuf(coutbuf); //reset to standard output again
-	}
-
-	void Print()
-	{
-		cout << r[0] << " " << r[1] << " " << r[2] << "\n";
-	}
-
-	void Print(int var)
-	{
-		cout << r[0] << " " << r[1] << " " << r[2] << " " << var << "\n";
-	}
-
-	void Print(double var)
-	{
-		cout << r[0] << " " << r[1] << " " << r[2] << " " << var << "\n";
-	}
-
-	void Print(double var1, double var2)
-	{
-		cout << r[0] << " " << r[1] << " " << r[2] << " " << var1 << " " << var2 << "\n";
-	}
-
-	void Move(double x_in, double y_in, double z_in)
-	{
-		Atom* temp = atom;
-		while (temp != NULL)
-		{
-			temp->r[0] += x_in;
-			temp->r[1] += y_in;
-			temp->r[2] += z_in;
-			temp = temp->Next;
-		}
-		r[0] += x_in;
-		r[1] += y_in;
-		r[2] += z_in;
-	}
-
 	void Import(string filename_in)
 	{
 		string line;
@@ -251,13 +198,13 @@ public:
 		string xyz_filename = filename_in;
 		string element;
 		ifstream fin;
-		double rotation[4][4];
-		double rotation2[4][4] =
+		double junk;
+		double rotation[3][3];
+		double rotation2[3][3] =
 		{
-			{ 1,		0,	  0,	 0 },
-			{ 0,		0,	 -1,	 0 },
-			{ 0,	    1,	  0,	 0 },
-			{ 0,		0,	  0,	 0 }
+			{ 1,		0,	  0	 },
+			{ 0,		0,	 -1	 },
+			{ 0,	    1,	  0	 },
 		};
 		ResetOrigin();
 		double epsilon = 0;
@@ -299,9 +246,9 @@ public:
 			exit(1);
 		}
 
-		for (int i = 0; i < 4; i++)
+		for (int i = 0; i < 3; i++)
 		{
-		 fin >> rotation[i][0]  >> rotation[i][1]  >> rotation[i][2]  >> rotation[i][3];
+		 fin >> rotation[i][0]  >> rotation[i][1]  >> rotation[i][2]  >> junk;
 		}
 
 		fin.close();
@@ -360,43 +307,32 @@ public:
 		
 	}
 
-	void Rotate(double rotation[4][4])
-	{
-		double r_rot[3];
-		Atom* temp = atom;
-		while (temp != NULL)
-		{
-			r_rot[0] = rotation[0][0] * temp->r[0] + rotation[0][1] * temp->r[1] + rotation[0][2] * temp->r[2];
-			r_rot[1] = rotation[1][0] * temp->r[0] + rotation[1][1] * temp->r[1] + rotation[1][2] * temp->r[2];
-			r_rot[2] = rotation[2][0] * temp->r[0] + rotation[2][1] * temp->r[1] + rotation[2][2] * temp->r[2];
-
-			for (int i = 0;i < 4;i++)
-			{
-				for (int j = 0;j < 4;j++)
-				{
-					orientation[i][j] = rotation[i][j]*orientation[j][i];
-				}
-			}
-
-			temp->r[0] = r_rot[0];
-			temp->r[1] = r_rot[1];
-			temp->r[2] = r_rot[2];
-
-			temp = temp->Next;
-		}
-	}
-
 	void Import(string filename_in, double epsilon, double sigma)
 	{
-
 		string line;
 		string vesta_filename = filename_in;
 		string xyz_filename = filename_in;
 		string element;
 		ifstream fin;
-		double orientation[4][4];
-		double r_in[3];
-		double r_rot[3];
+		double junk;
+		double rotation[3][3];
+		double rotation2[3][3] =
+		{
+			{ 1,		0,	  0 },
+			{ 0,		0,	 -1 },
+			{ 0,	    1,	  0 },
+		};
+		ResetOrigin();
+		int i = 1;
+		Atom* Temp = new Atom(0, 0, 0);
+		double initial[3];
+
+		for (int i = 0;i < 3;i++)
+		{
+			initial[i] = r[i];
+			r[i] = 0;
+		}
+
 
 
 		vesta_filename.erase(0, vesta_filename.find_last_of("\\", vesta_filename.length()) + 1);
@@ -424,12 +360,9 @@ public:
 			exit(1);
 		}
 
-		for (int i = 0; i < 4; i++)
+		for (int i = 0; i < 3; i++)
 		{
-			for (int j = 0; j < 4; j++)
-			{
-				fin >> orientation[i][j];
-			}
+			fin >> rotation[i][0] >> rotation[i][1] >> rotation[i][2] >> junk;
 		}
 
 		fin.close();
@@ -441,15 +374,13 @@ public:
 			getline(fin, line);
 			getline(fin, line);
 
-			while (fin >> element >> r_in[0] >> r_in[1] >> r_in[2])
+			while (fin >> element >> Temp->r[0] >> Temp->r[1] >> Temp->r[2])
 			{
-				r_rot[0] = orientation[0][0] * r_in[0] + orientation[0][1] * r_in[1] + orientation[0][2] * r_in[2];
-				r_rot[1] = orientation[1][0] * r_in[0] + orientation[1][1] * r_in[1] + orientation[1][2] * r_in[2];
-				r_rot[2] = orientation[2][0] * r_in[0] + orientation[2][1] * r_in[1] + orientation[2][2] * r_in[2];
 
+				cout << "Atom " << setw(2) << i << ": " << element << endl;
+				i++;
 
-				Atom temp(r_rot[0], r_rot[2], r_rot[1], epsilon, sigma);
-				Add_Atom(temp);
+				Add_Atom(Temp);
 			}
 		}
 		else
@@ -460,9 +391,74 @@ public:
 		}
 		fin.close();
 
+		Rotate(rotation);
+
+		Rotate(rotation2);
+
+		for (int i = 0;i < 3;i++)
+			r[i] = initial[i];
+
 		ResetOrigin();
+
 	}
 
+	void RotateAboutX(double Ang)
+	{
+		double Roatation[3][3] =
+		{
+			{ 1,	0,				0		},
+			{ 0,	cos(Ang), -1.0*	sin(Ang)},
+			{ 0,	sin(Ang),		cos(Ang)},
+
+		};
+		Rotate(Roatation);
+	}
+
+	void RotateAboutY(double Ang)
+	{
+		double Roatation[3][3] =
+		{
+			{ cos(Ang),			0,		sin(Ang)},
+			{ 0,				1,		0		},
+			{ -1.0*sin(Ang),	0,		cos(Ang)},
+		};
+		Rotate(Roatation);
+	}
+
+	void RotateAboutZ(double Ang)
+	{
+		double Roatation[3][3] =
+		{
+			{ cos(Ang), -1.0 * sin(Ang),	0 },
+			{ sin(Ang),		   cos(Ang),	0 },
+			{ 0,				0,	    	1 },
+		};
+		Rotate(Roatation);
+	}
+
+	void Rotate(double rotation[3][3])
+	{
+		double r_rot[3];
+		Atom* temp = atom;
+		double inintial[3] = { r[0],r[1],r[2] };
+		Move(-1.0 * r[0], -1.0 * r[1], -1.0 * r[2]);
+
+		while (temp != NULL)
+		{
+			r_rot[0] = rotation[0][0] * temp->r[0] + rotation[0][1] * temp->r[1] + rotation[0][2] * temp->r[2];
+			r_rot[1] = rotation[1][0] * temp->r[0] + rotation[1][1] * temp->r[1] + rotation[1][2] * temp->r[2];
+			r_rot[2] = rotation[2][0] * temp->r[0] + rotation[2][1] * temp->r[1] + rotation[2][2] * temp->r[2];
+
+			temp->r[0] = r_rot[0];
+			temp->r[1] = r_rot[1];
+			temp->r[2] = r_rot[2];
+
+			temp = temp->Next;
+		}
+		ResetOrigin();
+		Move(inintial[0], inintial[1], inintial[2]);
+	}
+	
 	void ResetOrigin()
 	{
 		Atom* temp = atom;
@@ -496,9 +492,62 @@ public:
 
 		r[0] = r_min[0];
 		r[1] = r_min[1];
-		r[2] = r_min[2];
+		r[2] = 0;
 
 		atom = temp;
+	}
+	
+	void Move(double x_in, double y_in, double z_in)
+	{
+		Atom* temp = atom;
+		while (temp != NULL)
+		{
+			temp->r[0] += x_in;
+			temp->r[1] += y_in;
+			temp->r[2] += z_in;
+			temp = temp->Next;
+		}
+		r[0] += x_in;
+		r[1] += y_in;
+		r[2] += z_in;
+	}
+
+	void Print_Atoms()
+	{
+		Atom* Temp = atom;
+
+		std::ofstream out("VestaObj.dat");
+		std::streambuf *coutbuf = std::cout.rdbuf(); //save old buf
+		std::cout.rdbuf(out.rdbuf()); //redirect std::cout to Surface.dat
+
+		while (atom != NULL)
+		{
+			atom->Print();
+			atom = atom->Next;
+		}
+
+		atom = Temp;
+		std::cout.rdbuf(coutbuf); //reset to standard output again
+	}
+
+	void Print()
+	{
+		cout << r[0] << " " << r[1] << " " << r[2] << "\n";
+	}
+
+	void Print(int var)
+	{
+		cout << r[0] << " " << r[1] << " " << r[2] << " " << var << "\n";
+	}
+
+	void Print(double var)
+	{
+		cout << r[0] << " " << r[1] << " " << r[2] << " " << var << "\n";
+	}
+
+	void Print(double var1, double var2)
+	{
+		cout << r[0] << " " << r[1] << " " << r[2] << " " << var1 << " " << var2 << "\n";
 	}
 
 };
@@ -720,7 +769,7 @@ private:
 			while (Obj_in->r[1] <= YMax)
 			{
 				Cur  = TipHeightCalc(Obj_in, Setpoint, ZStep, FRes);
-				Obj_in->Print(100*(Cur-Prev));
+				Obj_in->Print(100*(Cur-Prev),Setpoint);
 				Prev = Cur;
 				Obj_in->Move(0, ystep, 0);
 			}
@@ -739,26 +788,32 @@ private:
 
 	double TipHeightCalc(VestaObject* Obj_in, double Setpoint, double ZStep, double FRes)
 	{
-		double Error = LJForce(Obj_in)-Setpoint;
+		double Error = 100000;
 		bool check1 = 0;
 		bool check2 = 0;
+		
+		while (abs(LJForce(Obj_in)) < 0.001)
+			Obj_in->Move(0, 0, -1.0*ZStep);
+
 
 		while (abs(Error) >  FRes)
 		{
 			while ((check1 * check2) != 1)
 			{
+				Error = LJForce(Obj_in) - Setpoint;
+
 				if (Error > 0)
 				{
-					Obj_in->Move(0, 0, ZStep);
+					Obj_in->Move(0, 0,ZStep);
 					check1 = 1;
 				}
 
 				else
 				{
-					Obj_in->Move(0, 0, -1.0*ZStep);
+					Obj_in->Move(0,0, -1.0*ZStep);
 					check2 = 1;
 				}
-				Error = LJForce(Obj_in) - Setpoint;
+				
 			}
 
 		    	ZStep = ZStep /5;
@@ -860,34 +915,32 @@ public:
 		double XMin = round(((a1[0] * a1_cells + a2[0] * a2_cells) / 2 - Area * (abs(a1[0]) + abs(a2[0]))));
 		double YMax = round(((a1[1] * a1_cells + a2[1] * a2_cells) / 2 + Area * (abs(a1[1]) + abs(a2[1]))));
 		double YMin = round(((a1[1] * a1_cells + a2[1] * a2_cells) / 2 - Area * (abs(a1[1]) + abs(a2[1]))));
-		double Z = Obj_in->r[2];
 		std::stringstream buffer;
 		std::ofstream out("Topology.dat");
 
 		std::streambuf *coutbuf = std::cout.rdbuf(); //save old buf
 		std::cout.rdbuf(buffer.rdbuf());
 
-		TipHeightMap(Obj_in, XMax, XMin, YMax, YMin, Z, Setpoint, ZRes, FRes);
+		TipHeightMap(Obj_in, XMax, XMin, YMax, YMin, 5, Setpoint, ZRes, FRes);
 
 		std::cout.rdbuf(out.rdbuf()); //redirect std::cout to Surface.dat
 		cout << buffer.str() << endl;
 		std::cout.rdbuf(coutbuf); //reset to standard output again
 	}
 
-	void SurfaceForce(VestaObject* Obj_in, double Area)
+	void SurfaceForce(VestaObject* Obj_in, double z_0, double Area)
 	{
 		double XMax = round((a1[0] * a1_cells + a2[0] * a2_cells) / 2 + Area * (abs(a1[0]) + abs(a2[0])));
 		double XMin = round((a1[0] * a1_cells + a2[0] * a2_cells) / 2 - Area * (abs(a1[0]) + abs(a2[0])));
 		double YMax = round((a1[1] * a1_cells + a2[1] * a2_cells) / 2 + Area * (abs(a1[1]) + abs(a2[1])));
 		double YMin = round((a1[1] * a1_cells + a2[1] * a2_cells) / 2 - Area * (abs(a1[1]) + abs(a2[1])));
-		double Z = Obj_in->r[2];
 		std::stringstream buffer;
 		std::ofstream out("Surface.dat");
 
 		std::streambuf *coutbuf = std::cout.rdbuf(); //save old buf
 		std::cout.rdbuf(buffer.rdbuf());
 
-		XYZForce(Obj_in, XMax, XMin, YMax, YMin, Z, Z, 1);
+		XYZForce(Obj_in, XMax, XMin, YMax, YMin, z_0, z_0, 1);
 				
 		std::cout.rdbuf(out.rdbuf()); //redirect std::cout to Surface.dat
 		cout << buffer.str() << endl;
@@ -1011,6 +1064,15 @@ public:
 			TempAtom = TempAtom->Next;
 		}
 		Add_Defect(DefectCell);
+	}
+
+	void Remove_Defect()
+	{
+		Unit_Cell* Temp = first_cell;
+		while (first_cell->Next->Next != NULL)
+			first_cell = first_cell->Next;
+		first_cell->Next = NULL;
+		first_cell = Temp;
 	}
 };
 

@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Main.h" />
     <ClInclude Include="Source Files\Class_Definitions.h" />
   </ItemGroup>
   <ItemGroup>

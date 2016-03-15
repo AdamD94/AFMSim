@@ -28,6 +28,23 @@ void MoveFile(string Tipname, string Defectname, string Filename, double ID1, do
 	rename(OldFile.c_str(), NewFile.c_str());
 }
 
+void MoveFiles()
+{
+	MoveFile(Tip_Filename, Defect_Filename, "Topology.png", Setpoint, z_0, Defect_Present);
+	MoveFile(Tip_Filename, Defect_Filename, "Derivative.png", Setpoint, z_0, Defect_Present);
+	MoveFile(Tip_Filename, Defect_Filename, "Topology.dat", Setpoint, z_0, Defect_Present);
+
+	MoveFile(Tip_Filename, Defect_Filename, "Force_Curve.png", Setpoint, z_0, Defect_Present);
+	MoveFile(Tip_Filename, Defect_Filename, "Force_Curve.dat", Setpoint, z_0, Defect_Present);
+
+	MoveFile(Tip_Filename, Defect_Filename, "Surface.png", Setpoint, z_0, Defect_Present);
+	MoveFile(Tip_Filename, Defect_Filename, "Surface.dat", Setpoint, z_0, Defect_Present);
+
+	MoveFile(Tip_Filename, Defect_Filename, "Locations.dat", Setpoint, z_0, Defect_Present);
+	MoveFile(Tip_Filename, Defect_Filename, "VestaObj.dat", Setpoint, z_0, Defect_Present);
+}
+
+
 int	main(int argc, char *argv[])
 {
 	if (argc < 2)
@@ -56,7 +73,7 @@ int	main(int argc, char *argv[])
 	Atom* TipCarbon = new Atom(0.0, 0.0, -3.0, 1.0456*pow(10, -21), 4.9);		// Atoms to be added to the basis, coordinates are in terms of a1, a2, a3
 	
 	Tip->ResetOrigin();
-	//Tip->Add_Atom(TipCarbon);
+	Tip->Add_Atom(TipCarbon);
 	Tip->ResetOrigin();
 	Tip->Move(0 - Tip->r[0], 0 - Tip->r[1], z_0 - Tip->r[2]);
 	
@@ -75,43 +92,33 @@ int	main(int argc, char *argv[])
 		surface->Add_Defect(Defect);
 	}
 
+	surface->Print();
+
 	cout << "Computing" << endl;
 	cout << "Cell count: " << surface->cell_count << endl;
 
-	while (Setpoint <= 1)
-	{
-		surface->Print();
-		Tip->Print_Atoms();
+	Cantilever* Cant = new Cantilever(400E-6, 30E-6, 3.7E-6, 200 * pow(10, 9), 3184, Tip, surface);
+	Cant->FM_Scan(surface, 1);
+	
 
-		surface->TipHeight(Tip, Setpoint, ZStep, FRes, 3);
-		cout << "Topology complete" << endl;
-		system("Topology.plt");
-		system("Derivative.plt");
+	surface->Print();
+	Tip->Print_Atoms();
+	/*
+	surface->TipHeight(Tip, Setpoint, ZStep, FRes, 3);
+	cout << "Topology complete" << endl;
+	system("Topology.plt");
+	system("Derivative.plt");
 		
-		surface->ForceCurve(Tip, z_0, z_0 + 1);
-		cout << "Force curve complete" << endl;
-		system("XZU.plt");
+	surface->ForceCurve(Tip, z_0, z_0 + 1);
+	cout << "Force curve complete" << endl;
+	system("XZU.plt");
 		
-		surface->SurfaceForce(Tip, z_0, 3);
-		cout << "Surface force complete" << endl;
-		system("XYU.plt");
+	surface->SurfaceForce(Tip, z_0, 3);
+	cout << "Surface force complete" << endl;
+	system("XYU.plt");
 		
-		MoveFile(Tip_Filename, Defect_Filename, "Topology.png"  ,	Setpoint, z_0, Defect_Present);
-		MoveFile(Tip_Filename, Defect_Filename, "Derivative.png",	Setpoint, z_0, Defect_Present);
-		MoveFile(Tip_Filename, Defect_Filename, "Topology.dat"  , Setpoint, z_0, Defect_Present);
-		
-		MoveFile(Tip_Filename, Defect_Filename, "Force_Curve.png", Setpoint, z_0, Defect_Present);
-		MoveFile(Tip_Filename, Defect_Filename, "Force_Curve.dat", Setpoint, z_0, Defect_Present);
-		
-		MoveFile(Tip_Filename, Defect_Filename, "Surface.png", Setpoint, z_0, Defect_Present);
-		MoveFile(Tip_Filename, Defect_Filename, "Surface.dat", Setpoint, z_0, Defect_Present);
-		
-		MoveFile(Tip_Filename, Defect_Filename, "Locations.dat", Setpoint, z_0, Defect_Present);
-		MoveFile(Tip_Filename, Defect_Filename, "VestaObj.dat" , Setpoint, z_0, Defect_Present);
-		Setpoint += 0.01;
-		cout <<"Setpoint: "<< Setpoint << endl;
-	}
-
+	MoveFiles();
+	*/
 	clock_t toc = clock(); // Read in current clock cycle, subtract and divide by clock frequency for time elapsed in seconds
 	cout << "Simulation Complete \nElapsed: " << (double)(toc - tic) / CLOCKS_PER_SEC << "  seconds" << endl;
 	cin.ignore();

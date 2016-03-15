@@ -1,5 +1,59 @@
 #ifndef Class_Definitions
 #define Class_Definitions
+double ft[2048];
+double z_prev = 0;
+
+
+void four1(double* data, unsigned long nn)
+{
+	unsigned long n, mmax, m, j, istep, i;
+	double wtemp, wr, wpr, wpi, wi, theta;
+	double tempr, tempi;
+
+	// reverse-binary reindexing
+	n = nn << 1;
+	j = 1;
+	for (i = 1; i<n; i += 2) {
+		if (j>i) {
+			swap(data[j - 1], data[i - 1]);
+			swap(data[j], data[i]);
+		}
+		m = nn;
+		while (m >= 2 && j>m) {
+			j -= m;
+			m >>= 1;
+		}
+		j += m;
+	};
+
+	// here begins the Danielson-Lanczos section
+	mmax = 2;
+	while (n>mmax) {
+		istep = mmax << 1;
+		theta = -(2 * M_PI / mmax);
+		wtemp = sin(0.5*theta);
+		wpr = -2.0*wtemp*wtemp;
+		wpi = sin(theta);
+		wr = 1.0;
+		wi = 0.0;
+		for (m = 1; m < mmax; m += 2) {
+			for (i = m; i <= n; i += istep) {
+				j = i + mmax;
+				tempr = wr*data[j - 1] - wi*data[j];
+				tempi = wr * data[j] + wi*data[j - 1];
+
+				data[j - 1] = data[i - 1] - tempr;
+				data[j] = data[i] - tempi;
+				data[i - 1] += tempr;
+				data[i] += tempi;
+			}
+			wtemp = wr;
+			wr += wr*wpr - wi*wpi;
+			wi += wi*wpr + wtemp*wpi;
+		}
+		mmax = istep;
+	}
+}
 
 class Atom
 {
@@ -35,22 +89,22 @@ public:
 
 	void Print()
 	{
-		cout << r[0] << " " << r[1] << " " << r[2] << "\n";
+		cout << r[0] << "\t" << r[1] << "\t" << r[2] << "\n";
 	}
 
 	void Print(int var)
 	{
-		cout << r[0] << " " << r[1] << " " << r[2] << " " << var << "\n";
+		cout << r[0] << "\t" << r[1] << "\t" << r[2] << "\t" << var << "\n";
 	}
 
 	void Print(double var)
 	{
-		cout << r[0] << " " << r[1] << " " << r[2] << " " << var << "\n";
+		cout << r[0] << "\t" << r[1] << "\t" << r[2] << "\t" << var << "\n";
 	}
 
 	void Print(double var1, double var2)
 	{
-		cout << r[0] << " " << r[1] << " " << r[2] << " " << var1 << " " << var2 << "\n";
+		cout << r[0] << "\t" << r[1] << "\t" << r[2] << "\t" << var1 << "\t" << var2 << "\n";
 	}
 
 	double Dist(Atom* Other_Atom)
@@ -532,22 +586,27 @@ public:
 
 	void Print()
 	{
-		cout << r[0] << " " << r[1] << " " << r[2] << "\n";
+		cout << r[0] << "\t" << r[1] << "\t" << r[2] << "\n";
 	}
 
 	void Print(int var)
 	{
-		cout << r[0] << " " << r[1] << " " << r[2] << " " << var << "\n";
+		cout << r[0] << "\t" << r[1] << "\t" << r[2] << "\t" << var << "\n";
 	}
 
 	void Print(double var)
 	{
-		cout << r[0] << " " << r[1] << " " << r[2] << " " << var << "\n";
+		cout << r[0] << "\t" << r[1] << "\t" << r[2] << "\t" << var << "\n";
 	}
 
 	void Print(double var1, double var2)
 	{
-		cout << r[0] << " " << r[1] << " " << r[2] << " " << var1 << " " << var2 << "\n";
+		cout << r[0] << "\t" << r[1] << "\t" << r[2] << "\t" << var1 << "\t" << var2 << "\n";
+	}
+
+	void Print(double var1, double var2, double var3)
+	{
+		cout << r[0] << "\t" << r[1] << "\t" << r[2] << "\t" << var1 << "\t" << var2 << "\t" << var3 << "\n";
 	}
 
 };
@@ -555,8 +614,6 @@ public:
 class Unit_Cell
 {
 private:
-
-
 	
 public:
 
@@ -675,12 +732,7 @@ class Surface
 private:
 
 	Unit_Cell* first_cell;
-	double a1[3];	//////////////////////////////////////////////////////////
-	double a2[3];	//		Lattice vectors a1, a2 and a3 follow from		//
-	double a3[3];	//	crystallographic convention and have units of nm	//
-	int a1_cells;	//////////////////////////////////////////////////////////
-	int a2_cells;
-	int a3_cells;
+	
 
 	void Tile_Space()
 	{
@@ -756,7 +808,7 @@ private:
 
 		double original_position[3] = { Obj_in->r[0], Obj_in->r[1], Obj_in->r[2] };
 
-		cout << "x [Å] " << "y [Å] " << "z [Å] " << "dz " << endl;
+		cout << "x [Å]\t" << "y [Å]\t" << "z [Å]\t" << "dz" << endl;
 
 		Obj_in->Move(XMin - Obj_in->r[0], YMin - Obj_in->r[1], ZIni - Obj_in->r[2]);
 
@@ -769,7 +821,7 @@ private:
 			while (Obj_in->r[1] <= YMax)
 			{
 				Cur  = TipHeightCalc(Obj_in, Setpoint, ZStep, FRes);
-				Obj_in->Print(100*(Cur-Prev),Setpoint);
+				Obj_in->Print((Cur-Prev), Obj_in->r[2] + 0.2 * (Cur - Prev),Setpoint);
 				Prev = Cur;
 				Obj_in->Move(0, ystep, 0);
 			}
@@ -823,51 +875,17 @@ private:
 		return(Obj_in->r[2]);
 	}
 
-	double LJPot(VestaObject* Obj_in)
-	{
-		Unit_Cell* temp = first_cell;
-		double LJPot = 0;
-
-		while (temp != NULL)
-		{
-			LJPot += temp->LJPot(Obj_in);
-			temp = temp->Next;
-		}
-		return LJPot;
-	}
-
-	double LJForce(VestaObject* Obj_in)
-	{
-	
-
-		Unit_Cell* temp = first_cell;
-		double Force = 0;
-
-		while (temp != NULL)
-		{
-			Force += temp->LJForce(Obj_in);
-			temp = temp->Next;
-		}
-		return Force;
-	}
-
-	double PerpLJForce(VestaObject* Obj_in)
-	{
-		Unit_Cell* temp = first_cell;
-		double Force = 0;
-
-		while (temp != NULL)
-		{
-			Force += temp->PerpLJForce(Obj_in);
-			temp = temp->Next;
-		}
-		return Force;
-	}
 
 public:
 
 	int cell_count = 0;
 	int atom_count = 0;
+	double a1[3];	//////////////////////////////////////////////////////////
+	double a2[3];	//		Lattice vectors a1, a2 and a3 follow from		//
+	double a3[3];	//	crystallographic convention and have units of nm	//
+	int a1_cells;	//////////////////////////////////////////////////////////
+	int a2_cells;
+	int a3_cells;
 
 	Surface(double a1_in[3], double a2_in[3], double a3_in[3], int a1_cells_in, int a2_cells_in, int a3_cells_in, Unit_Cell* Cell_in)
 	{
@@ -907,6 +925,47 @@ public:
 			temp = temp->Next;
 		}
 		std::cout.rdbuf(coutbuf); //reset to standard output again
+	}
+
+	double LJPot(VestaObject* Obj_in)
+	{
+		Unit_Cell* temp = first_cell;
+		double LJPot = 0;
+
+		while (temp != NULL)
+		{
+			LJPot += temp->LJPot(Obj_in);
+			temp = temp->Next;
+		}
+		return LJPot;
+	}
+
+	double LJForce(VestaObject* Obj_in)
+	{
+
+
+		Unit_Cell* temp = first_cell;
+		double Force = 0;
+
+		while (temp != NULL)
+		{
+			Force += temp->LJForce(Obj_in);
+			temp = temp->Next;
+		}
+		return Force;
+	}
+
+	double PerpLJForce(VestaObject* Obj_in)
+	{
+		Unit_Cell* temp = first_cell;
+		double Force = 0;
+
+		while (temp != NULL)
+		{
+			Force += temp->PerpLJForce(Obj_in);
+			temp = temp->Next;
+		}
+		return Force;
 	}
 	 
 	void TipHeight(VestaObject* Obj_in, double Setpoint, double ZRes, double FRes, double Area)
@@ -986,7 +1045,7 @@ public:
 		
 		double original_position[3] = { Obj_in->r[0], Obj_in->r[1], Obj_in->r[2] };
 
-		cout << "x [Å] " << "y [Å] " << "z [Å] " << "U [nN] " << endl;
+		cout << "x [Å]\t" << "y [Å]\t" << "z [Å]\t" << "F [nN]\t" << endl;
 
 		Obj_in->Move(XMin - Obj_in->r[0], YMin - Obj_in->r[1], ZMin - Obj_in->r[2]);
 
@@ -1075,5 +1134,161 @@ public:
 		first_cell = Temp;
 	}
 };
+
+
+class Cantilever
+{
+private:
+
+public: 
+	double l;
+	double w;
+	double t;
+	double k;
+	double c = 0;
+	double Fd = 0; //driving force;
+	double rho;
+	double E;
+	double I;
+	double m;
+	double w_0;
+	double f_0;
+	double Z_0;
+	int i = 0;
+	const int transient = 1000;
+
+
+	VestaObject* Tip;
+	Surface* Surf;
+
+	Cantilever(double length, double width, double thickness, double Youngs_Modulus, double density, VestaObject* Tip_in, Surface* Surf_in)
+	{
+		l = length;
+		w = width;
+		t = thickness;
+		E = Youngs_Modulus;
+		I = l*pow(t, 3) / 12;
+		k = 3 * E*I / pow(l, 3);
+		rho = density;
+		m = l*w*t*rho;
+		w_0 = sqrt(k / m);
+		f_0 = w_0 / (2 * M_PI);
+		Tip = Tip_in;
+		Surf = Surf_in;
+		cout << "f_0: " << f_0 << endl;
+		cout << "k: " << k << endl;
+
+	}
+
+	void Oscillate(const state_type &z, state_type &dzdt, double t)
+	{
+		dzdt[0] = z[1];
+		dzdt[1] = ((-1.0*k)*z[0] - c*dzdt[0] + Fd*sin(w_0*t)  + Surf->LJForce(Tip)*pow(10, -9))/m; //restoring force - damping + driving + Tip-Surface interaction
+
+	}
+
+	void Write_Oscillation(const state_type &z, const double t)
+	{
+
+		Tip->Print(t, z[0], z[1]);
+		Tip->Move(0, 0, (z[0]*pow(10,10) - z_prev*pow(10, 10)));
+		z_prev = z[0];
+		if (t > transient / f_0 && i < 1024)
+		{
+			ft[i] = z[0];
+			i++;
+		}
+	}
+
+	void Write_Bifurcation(const state_type &z, const double t)
+	{
+		if (t > (transient + i)/f_0)
+		{
+			Tip->Print(t, z[0], Z_0);
+			i++;
+			Tip->Move(0, 0, (z[0] - z_prev)*pow(10, 10));
+			z_prev = z[0];
+		}
+	}
+	
+	void FM_Scan(Surface* Surf, double Area)
+	{
+		double XMax = round(((Surf->a1[0] * Surf->a1_cells + Surf->a2[0] * Surf->a2_cells) / 2 + Area * (abs(Surf->a1[0]) + abs(Surf->a2[0]))));
+		double XMin = round(((Surf->a1[0] * Surf->a1_cells + Surf->a2[0] * Surf->a2_cells) / 2 - Area * (abs(Surf->a1[0]) + abs(Surf->a2[0]))));
+		double YMax = round(((Surf->a1[1] * Surf->a1_cells + Surf->a2[1] * Surf->a2_cells) / 2 + Area * (abs(Surf->a1[1]) + abs(Surf->a2[1]))));
+		double YMin = round(((Surf->a1[1] * Surf->a1_cells + Surf->a2[1] * Surf->a2_cells) / 2 - Area * (abs(Surf->a1[1]) + abs(Surf->a2[1]))));
+		double XStep = (XMax - XMin) / 250;
+		double YStep = (YMax - YMin) / 250;
+		double Original_Position[3] = { Tip->r[0], Tip->r[1], Tip->r[2] };
+		namespace pl = std::placeholders;
+		const double end = (transient+50)/f_0;
+		const double step = 0.00005 / f_0;
+
+
+		Tip->Move(XMin - Tip->r[0], YMin - Tip->r[1], 0);
+
+		std::stringstream buffer;
+		std::ofstream Osc("Oscillation.dat");
+		std::ofstream Transform("Transform.dat");
+		std::streambuf *coutbuf = std::cout.rdbuf(); //save old buf
+		std::cout.rdbuf(Osc.rdbuf()); //redirect std::cout to Oscillation.dat
+
+		state_type z = { 0 , 0 }; // initial conditions
+		c  = 1000*m;
+		Fd = m/100;
+
+		integrate_adaptive(make_controlled(1E-12 , 1E-12 ,stepper_type()),
+			std::bind(&Cantilever::Oscillate, *this, pl::_1, pl::_2, pl::_3), z, 0.0, end, step, std::bind(&Cantilever::Write_Oscillation, *this, pl::_1, pl::_2));
+
+
+		std::cout.rdbuf(Transform.rdbuf()); //redirect std::cout to Transform.dat"
+
+		
+		four1(ft, 1024);
+		double conv = 2*1024 * step;
+		for (int k = 0; k < 2047; k+=2)
+		{
+			cout << k / conv << " " << sqrt(pow(ft[k], 2) + pow(ft[k + 1], 2)) << endl;
+		}
+
+
+		Z_0 = Tip->r[2];
+		
+		/*
+		while (Z_0 > 4)
+		{
+			z = { 0 , 0 };
+			Tip->Move(XMin - Tip->r[0], YMin - Tip->r[1], Z_0 - Tip->r[2]);
+			i = 0;
+			integrate_adaptive(make_controlled(1E-12, 1E-6, stepper_type()),
+				std::bind(&Cantilever::Oscillate, *this, pl::_1, pl::_2, pl::_3), z, 0.0, 150 / f_0, 0.005 / f_0, std::bind(&Cantilever::Write_Oscillation, *this, pl::_1, pl::_2));
+			cout << "\n";
+			printf("Z_0: %f\r", (Z_0));
+			Z_0 -= 0.005;
+		}
+		*/
+
+		/*
+		while (Tip->r[0] < XMax)
+		{
+			while (Tip->r[1] < YMax)
+			{
+				z = { Tip->r[2] , 0 };
+
+				integrate_adaptive(make_controlled(1E-12, 1E-12, stepper_type()),
+				std::bind(&Cantilever::Oscillate, *this, pl::_1, pl::_2, pl::_3), z, 1.0, 10.0, 0.1, std::bind(&Cantilever::Write_Oscillation, *this, pl::_1, pl::_2));
+
+				Tip->Move(0, YStep, 0);
+			}
+			Tip->Move(XStep, YMin - Tip->r[1], 0);
+		}
+		*/
+
+		std::cout.rdbuf(coutbuf); //reset to standard output again
+	}
+
+
+};
+
 
 #endif

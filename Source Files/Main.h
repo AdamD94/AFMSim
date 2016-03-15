@@ -1,6 +1,7 @@
 #pragma once
-using namespace std;
+
 #define _USE_MATH_DEFINES
+
 #include <cmath>
 #include <iostream>
 #include <fstream>
@@ -9,6 +10,15 @@ using namespace std;
 #include <sstream>
 #include <vector>
 #include <direct.h>
+#include "boost/array.hpp"
+#include "boost/numeric/odeint.hpp"
+#include "boost/range.hpp"
+
+using namespace std;
+using namespace boost::numeric::odeint;
+typedef boost::array< double, 2 > state_type;
+typedef runge_kutta_cash_karp54< state_type > stepper_type;
+
 #include "Class_Definitions.h"  //Header File containing class definitions
 
 double a = 1.4;

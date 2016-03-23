@@ -1,6 +1,7 @@
 #pragma once
-using namespace std;
+
 #define _USE_MATH_DEFINES
+
 #include <cmath>
 #include <iostream>
 #include <fstream>
@@ -8,7 +9,19 @@ using namespace std;
 #include <string>
 #include <sstream>
 #include <vector>
-#include <direct.h>
+#include "boost/filesystem.hpp"
+#include "boost/array.hpp"
+#include "boost/numeric/odeint.hpp"
+#include "boost/range.hpp"
+
+using namespace boost::filesystem;
+using namespace boost::numeric::odeint;
+using namespace std;
+
+typedef boost::array< double, 2 > state_type;
+typedef runge_kutta_cash_karp54< state_type > stepper_type;
+
+#include "Class_Definitions.h"  //Header File containing class definitions
 
 double a = 1.4;
 double c = 6.71;
@@ -27,3 +40,4 @@ double a3[3] = { a				, 0						,c* -1.0 };
 bool Defect_Present = 0;
 string Defect_Filename = "";
 string Tip_Filename = "";
+VestaObject* Defect = new VestaObject(0, 0, 0);

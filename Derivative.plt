@@ -1,4 +1,9 @@
 #Tip Height Plot
+unset xrange
+unset yrange
+unset zrange
+unset cblabel
+
 
 set term pngcairo enhanced color size 1024,798 crop font 'Veranda, 18'
 set output 'Derivative.png'
@@ -13,8 +18,8 @@ set palette model RGB defined (0 "dark-blue", 2 "blue",4 "light-blue",5 "light-g
 set size ratio -1
 set origin -0.033, 0
 
-unset cblabel
-
+unset cbtics
+unset colorbox
 set cblabel 'z [Å]'
 
 set lmargin 0
@@ -25,8 +30,10 @@ unset xtics
 unset ytics
 unset border
 
+
 set arrow 3 from 48,-8 to 53,-8 nohead size 1, 90 lw 3 lt -1 front 
 set label "5Å" at 50,-8.75
 
-set pm3d map 
+
+set pm3d map interpolate 2,2
 splot 'Topology.dat' using 1:2:4:4 notitle palette

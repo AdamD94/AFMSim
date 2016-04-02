@@ -1,8 +1,11 @@
-AFMSim: Main.o
-	g++ Main.o -std=c++11 -lboost_thread -lboost_filesystem  -lboost_system -O2 -o AFMSim
+All: AFMSim.o AFMSim clean 
 
-Main.o: Main.cpp Main.h Class_Definitions.h
-	g++ -std=c++11 -c -lboost_thread -lboost_filesystem  -lboost_system -O2 Main.cpp
+AFMSim: AFMSim.o
+	g++ AFMSim.o -std=c++11 -lboost_thread -lboost_filesystem -lboost_iostreams  -lboost_system -O2 -o AFMSim
+
+AFMSim.o: AFMSim.cpp AFMSim.h Var.h gnuplot-iostream.h 
+	g++ -std=c++11 -c -lboost_thread -lboost_filesystem -lboost_system -O2 AFMSim.cpp
 
 clean:
-	rm *.o 
+	rm *.o
+	

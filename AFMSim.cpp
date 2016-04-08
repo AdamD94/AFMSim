@@ -76,7 +76,7 @@ int	main(int argc, char *argv[])
 
 	if (argc < 2)
 	{
-		cout << "Incorrect number of arguments, drop tip onto .exe" << endl;
+		cout << "Incorrect number of arguments, call AFMSim <Tip Filename> <Defect Filename (optional)>" << endl;
 		cin.ignore();
 		return(0);
 	}
@@ -95,12 +95,9 @@ int	main(int argc, char *argv[])
 	VestaObject* Tip = new VestaObject(0, 0, z_0);
 	Tip->Import(Tip_Filename);
 
-	Atom* Carbon1 = new Atom(0.0, 0.0, 0.0);		// Atoms to be added to the basis, coordinates are in terms of a1, a2, a3
-	Atom* Carbon2 = new Atom((2.0/3.0), (2.0/3.0), 0.0);
-	Atom* TipCarbon = new Atom(0.0, 0.0, -3.0, 1.0456*pow(10, -21), 4.9);		// Atoms to be added to the basis, coordinates are in terms of a1, a2, a3
+	Atom* Carbon1 = new Atom(0.0, 0.0, 0.0, "C");		// Atoms to be added to the basis, coordinates are in terms of a1, a2, a3
+	Atom* Carbon2 = new Atom((2.0/3.0), (2.0/3.0), 0.0, "C");
 	
-	Tip->ResetOrigin();
-	Tip->Add_Atom(TipCarbon);
 	Tip->ResetOrigin();
 	Tip->Move(0 - Tip->r[0], 0 - Tip->r[1], z_0 - Tip->r[2]);
 	

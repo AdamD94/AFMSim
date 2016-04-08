@@ -3,9 +3,13 @@
 
 double ft[2048];
 double z_prev = 0;
+
 int GlobalXRes = 500;
-int GlobalYRes = 500;
-int GlobalZRes = 500;
+int GlobalYRes = 250;
+int GlobalZRes = 250;
+const int LookupSize =64;
+
+double lookup[LookupSize][LookupSize][2] = {0};
 
 void write_gsf(string Filename)
 {
@@ -89,33 +93,102 @@ class Atom
 {
 private:
 	double temp;
+	double e_mod;
+	double s_mod;
+	int element_index=0;
+
+	void populate_lookup()
+	{
+		if(lookup[element_index][element_index][0]!=0)
+			return;
+
+		else
+		{
+			lookup[element_index][element_index][0]=e;
+			lookup[element_index][element_index][1]=s;
+
+			for(int i=0; i<LookupSize; i++)
+			{
+				if(lookup[i][i][0]!=0 && i != element_index)
+				{
+					lookup[element_index][i][0] =   sqrt(lookup[element_index][element_index][0]*lookup[i][i][0]);
+					lookup[element_index][i][1] =  		(lookup[element_index][element_index][1]+lookup[i][i][1])/2;
+					lookup[i][element_index][0] =   lookup[element_index][i][0];
+					lookup[i][element_index][1] =   lookup[element_index][i][1];
+				}
+			}
+		}
+	}
 
 public:
 	double r[3];
 	double	e;
 	double	s;
+	string element;
+
 	
 	Atom* Next;
 
-	Atom(double x_in, double y_in, double z_in)
+	Atom(double x_in, double y_in, double z_in, string element_in)
 	{
 		r[0] = x_in;
 		r[1] = y_in;
 		r[2] = z_in;
-		e = 0;
-		s = 0;	
+		element=element_in;
+
+		if (element.compare("C") == 0)
+			{
+				element_index=0;
+				e = 1.0456*pow(10, -21);	//epsilon	[Joules]	(LJ Parameter) 
+				s = 4.0;					//sigma		[Angstroms] (LJ Parameter) 
+			}
+			else if (element.compare("Pt") == 0)
+			{
+				element_index=1;
+				e = 8.3304*pow(10, -20);		//epsilon	[Joules]	(LJ Parameter) 
+				s = 2.475;						//sigma		[Angstroms] (LJ Parameter) 
+			}
+
+			else if (element.compare("N") == 0)
+			{
+				element_index=2;
+				e = 8.1111631*pow(10, -21);		//epsilon	[Joules]	(LJ Parameter) 
+				s = 3.5;						//sigma		[Angstroms] (LJ Parameter) 
+			}
+
+			else if (element.compare("O") == 0)
+			{
+				element_index=3;
+				e = 1.38953*pow(10, -21);		//epsilon	[Joules]	(LJ Parameter) 
+				s = 3.20;						//sigma		[Angstroms] (LJ Parameter) 
+			}
+
+			else if (element.compare("S") == 0)
+			{
+				element_index=4;
+				e = 1.38953*pow(10, -21);		//epsilon	[Joules]	(LJ Parameter) 
+				s = 4.00;						//sigma		[Angstroms] (LJ Parameter) 
+			}
+
+			else if (element.compare("H") == 0)
+			{
+				element_index=5;
+				e = 1.38953*pow(10, -22);		//epsilon	[Joules]	(LJ Parameter) 
+				s = 2.00;						//sigma		[Angstroms] (LJ Parameter) 
+			}
+
+			else
+			{
+				element_index=0;
+				cout << "Lennard jones parameters not stored for: " << element << ". Assuming Carbon"<< endl;
+				element = "C";
+				e = 1.0456*pow(10, -21);	//epsilon	[Joules]	(LJ Parameter) 
+				s = 4.0;	
+			}
+		populate_lookup();
 		Next = NULL;
 	}
 
-	Atom(double x_in, double y_in, double z_in, double e_in, double s_in)
-	{
-		r[0] = x_in;
-		r[1] = y_in;
-		r[2] = z_in;
-		e = e_in;
-		s = s_in;
-		Next = NULL;
-	}
 
 	void Print()
 	{
@@ -144,24 +217,32 @@ public:
 
 	double LJPot(Atom* Other_Atom)
 	{	
+
+
 		temp = Dist(Other_Atom);
-		if (temp > (3 * s))
+		if (temp > (2.5 * lookup[element_index][Other_Atom->element_index][1])) 		// Truncation outside critical range
 			return 0;
 
-		const double LJ_Truncation = 4 * e*(pow((s / (3 * s)), 12) - pow((s / (3 * s)), 6));
+		e_mod= lookup[element_index][Other_Atom->element_index][0];
+		s_mod= lookup[element_index][Other_Atom->element_index][1];
 
-		return (double)	 4 * e*(pow((s /temp), 12) - pow((s / temp), 6)) - LJ_Truncation;
+		const double LJ_Truncation = 4 * e_mod *(pow((s_mod / (3 * s_mod)), 12) - pow((s_mod / (3 * s_mod)), 6));
+
+		return (double)	 4 * e_mod *(pow((s_mod /temp), 12) - pow((s_mod / temp), 6)) - LJ_Truncation;
 	}
 
 	double LJForce(Atom* Other_Atom)
 	{
 		temp = Dist(Other_Atom);
-		if (temp > (3 * s))
+		if (temp > (2.5 * lookup[element_index][Other_Atom->element_index][1])) 		// Truncation outside critical range
 			return 0;
 
-		const double LJ_Truncation = (24 / (3*s))*e*(2 * pow((s / (3 * s)), 12)- pow((s / (3 * s)), 6))*pow(10, 19);
+		e_mod= lookup[element_index][Other_Atom->element_index][0];
+		s_mod= lookup[element_index][Other_Atom->element_index][1];
 
-		return (double) (24 / temp)*e*(2 * pow((s / temp), 12) -  pow((s / temp), 6))*pow(10, 19) - LJ_Truncation;
+		const double LJ_Truncation = (24 / (3*s_mod))*e_mod*(2 * pow((s_mod / (3 * s_mod)), 12)- pow((s_mod / (3 * s_mod)), 6))*pow(10, 19);
+
+		return (double) (24 / temp)*e_mod*(2 * pow((s_mod / temp), 12) -  pow((s_mod / temp), 6))*pow(10, 19) - LJ_Truncation;
 	}
 	
 	double PerpLJForce(Atom* Other_Atom)
@@ -196,7 +277,7 @@ public:
 	{
 		Atom* Temp = atom;
 		if (atom == NULL)
-			atom = new Atom(Atom_in.r[0] + r[0], Atom_in.r[1] + r[1], Atom_in.r[2] + r[2], Atom_in.e, Atom_in.s);
+			atom = new Atom(Atom_in.r[0] + r[0], Atom_in.r[1] + r[1], Atom_in.r[2] + r[2], Atom_in.element);
 
 		else
 		{
@@ -205,7 +286,7 @@ public:
 				atom = atom->Next;
 			}
 			atom_count++;
-			atom->Next = new Atom(Atom_in.r[0] + r[0], Atom_in.r[1] + r[1], Atom_in.r[2] + r[2], Atom_in.e, Atom_in.s);
+			atom->Next = new Atom(Atom_in.r[0] + r[0], Atom_in.r[1] + r[1], Atom_in.r[2] + r[2], Atom_in.element);
 			atom = Temp;
 		}
 	}
@@ -214,7 +295,7 @@ public:
 	{
 		Atom* Temp = atom;
 		if (atom == NULL)
-			atom = new Atom(Atom_in->r[0] + r[0], Atom_in->r[1] + r[1], Atom_in->r[2] + r[2], Atom_in->e, Atom_in->s);
+			atom = new Atom(Atom_in->r[0] + r[0], Atom_in->r[1] + r[1], Atom_in->r[2] + r[2], Atom_in->element);
 
 		else
 		{
@@ -223,7 +304,7 @@ public:
 				atom = atom->Next;
 			}
 			atom_count++;
-			atom->Next = new Atom(Atom_in->r[0] + r[0], Atom_in->r[1] + r[1], Atom_in->r[2] + r[2], Atom_in->e, Atom_in->s);
+			atom->Next = new Atom(Atom_in->r[0] + r[0], Atom_in->r[1] + r[1], Atom_in->r[2] + r[2],Atom_in->element);
 			atom = Temp;
 		}
 	}
@@ -282,7 +363,10 @@ public:
 		string xyz_filename = filename_in;
 		string element;
 		ifstream fin;
+		int i = 1;
 		double junk;
+		double x,y,z;
+		double initial[3];
 		double rotation[3][3];
 		double rotation2[3][3] =
 		{
@@ -290,20 +374,17 @@ public:
 			{ 0,		0,	 -1	 },
 			{ 0,	    1,	  0	 },
 		};
+
+
+		Atom* Temp;
+
 		ResetOrigin();
-		double epsilon = 0;
-		double sigma = 0;
-		int i = 1;
-		Atom* Temp = new Atom(0,0,0);
-		double initial[3];
 
 		for (int i = 0;i < 3;i++)
 		{
 			initial[i] = r[i];
 			r[i] = 0;
 		}
-
-
 
 		vesta_filename.erase(0, vesta_filename.find_last_of("\\", vesta_filename.length()) + 1);
 		vesta_filename.erase(vesta_filename.find_last_of(".", vesta_filename.length() + 1), vesta_filename.length() + 1);
@@ -320,7 +401,7 @@ public:
 		{
 			while (getline(fin, line) && line.compare("SCENE") != 0)
 			{
-			
+
 			}
 		}
 		else
@@ -344,31 +425,11 @@ public:
 			getline(fin, line);
 			getline(fin, line);
 
-			while (fin>>element>>Temp->r[0]>> Temp->r[1]>> Temp->r[2])
+			while (fin >> element >> x >> y >> z)
 			{
-
-				if (element.compare("C") == 0)
-				{
-					Temp->e = 1.0456*pow(10, -21);	//epsilon	[Joules]	(LJ Parameter) 
-					Temp->s = 4.0;					//sigma		[Angstroms] (LJ Parameter) 
-				}
-				else if (element.compare("Pt") == 0)
-				{
-					Temp->e = 3.534*pow(10, -21);		//epsilon	[Joules]	(LJ Parameter) 
-					Temp->s = 2.95;					//sigma		[Angstroms] (LJ Parameter) 
-				}
-				else
-				{
-					cout << "Lennard jones parameters not stored for: " << element << ". Assuming Carbon"<< endl;
-					cout << "Call Import(filename, epsilon, sigma)" << endl;
-					element = "C";
-					Temp->e = 1.0456*pow(10, -21);	//epsilon	[Joules]	(LJ Parameter) 
-					Temp->s = 4.0;
-				}
-
 				cout << "Atom " << setw(2) << i << ": " << element << endl;
 				i++;
-
+				Temp = new Atom(x,y,z,element);
 				Add_Atom(Temp);
 			}
 		}
@@ -389,101 +450,6 @@ public:
 		
 		ResetOrigin();
 		
-	}
-
-	void Import(string filename_in, double epsilon, double sigma)
-	{
-		string line;
-		string vesta_filename = filename_in;
-		string xyz_filename = filename_in;
-		string element;
-		ifstream fin;
-		double junk;
-		double rotation[3][3];
-		double rotation2[3][3] =
-		{
-			{ 1,		0,	  0 },
-			{ 0,		0,	 -1 },
-			{ 0,	    1,	  0 },
-		};
-		ResetOrigin();
-		int i = 1;
-		Atom* Temp = new Atom(0, 0, 0);
-		double initial[3];
-
-		for (int i = 0;i < 3;i++)
-		{
-			initial[i] = r[i];
-			r[i] = 0;
-		}
-
-
-
-		vesta_filename.erase(0, vesta_filename.find_last_of("\\", vesta_filename.length()) + 1);
-		vesta_filename.erase(vesta_filename.find_last_of(".", vesta_filename.length() + 1), vesta_filename.length() + 1);
-
-		xyz_filename.erase(0, xyz_filename.find_last_of("\\", xyz_filename.length()) + 1);
-		xyz_filename.erase(xyz_filename.find_last_of(".", xyz_filename.length() + 1), xyz_filename.length() + 1);
-
-		vesta_filename.append(".vesta");
-		xyz_filename.append(".xyz");
-
-		fin.open(vesta_filename);
-
-		if (fin.is_open())
-		{
-			while (getline(fin, line) && line.compare("SCENE") != 0)
-			{
-
-			}
-		}
-		else
-		{
-			cout << vesta_filename << " not found" << endl;
-			cin.ignore();
-			exit(1);
-		}
-
-		for (int i = 0; i < 3; i++)
-		{
-			fin >> rotation[i][0] >> rotation[i][1] >> rotation[i][2] >> junk;
-		}
-
-		fin.close();
-
-		fin.open(xyz_filename);
-
-		if (fin.is_open())
-		{
-			getline(fin, line);
-			getline(fin, line);
-
-			while (fin >> element >> Temp->r[0] >> Temp->r[1] >> Temp->r[2])
-			{
-
-				cout << "Atom " << setw(2) << i << ": " << element << endl;
-				i++;
-
-				Add_Atom(Temp);
-			}
-		}
-		else
-		{
-			cout << xyz_filename << " not found" << endl;
-			cin.ignore();
-			exit(1);
-		}
-		fin.close();
-
-		Rotate(rotation);
-
-		Rotate(rotation2);
-
-		for (int i = 0;i < 3;i++)
-			r[i] = initial[i];
-
-		ResetOrigin();
-
 	}
 
 	void RotateAboutX(double Ang)
@@ -675,7 +641,7 @@ public:
 	{
 		Atom* Temp = first_atom;
 		if (first_atom == NULL)
-			first_atom = new Atom(Atom_in.r[0] + r[0], Atom_in.r[1] + r[1], Atom_in.r[2] + r[2], Atom_in.e, Atom_in.s);
+			first_atom = new Atom(Atom_in.r[0] + r[0], Atom_in.r[1] + r[1], Atom_in.r[2] + r[2], Atom_in.element);
 
 		else
 		{
@@ -683,7 +649,7 @@ public:
 			{
 				first_atom = first_atom->Next;
 			}
-			first_atom->Next = new Atom(Atom_in.r[0] + r[0], Atom_in.r[1] + r[1], Atom_in.r[2] + r[2], Atom_in.e, Atom_in.s);
+			first_atom->Next = new Atom(Atom_in.r[0] + r[0], Atom_in.r[1] + r[1], Atom_in.r[2] + r[2], Atom_in.element);
 			first_atom = Temp;
 		}
 	}
@@ -692,7 +658,7 @@ public:
 	{
 		Atom* Temp = first_atom;
 		if (first_atom == NULL)
-			first_atom = new Atom(Atom_in->r[0] + r[0], Atom_in->r[1] + r[1], Atom_in->r[2] + r[2], Atom_in->e, Atom_in->s);
+			first_atom = new Atom(Atom_in->r[0] + r[0], Atom_in->r[1] + r[1], Atom_in->r[2] + r[2], Atom_in->element);
 
 		else
 		{
@@ -700,7 +666,7 @@ public:
 			{
 				first_atom = first_atom->Next;
 			}
-			first_atom->Next = new Atom(Atom_in->r[0] + r[0], Atom_in->r[1] + r[1], Atom_in->r[2] + r[2], Atom_in->e, Atom_in->s);
+			first_atom->Next = new Atom(Atom_in->r[0] + r[0], Atom_in->r[1] + r[1], Atom_in->r[2] + r[2], Atom_in->element);
 			first_atom = Temp;
 		}
 	}

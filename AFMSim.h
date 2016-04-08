@@ -1,12 +1,42 @@
 #ifndef AFMSim
 #define AFMSim
+
 double ft[2048];
 double z_prev = 0;
+int GlobalXRes = 500;
+int GlobalYRes = 500;
+int GlobalZRes = 500;
 
-
-void four1(double* data, unsigned long nn)
+void write_gsf(string Filename)
 {
-	unsigned long n, mmax, m, j, istep, i;
+    string NewFile = Filename.substr(0,Filename.find_last_of(".")).append(".xyz");
+	string line;
+	fstream Input(Filename);
+	ofstream Output(NewFile);
+	stringstream StreamBuf;
+	double x, y, z, dz;
+
+  	if (Input.is_open())
+  	{
+  		getline (Input,line);
+
+    	while ( Input >> x >> y >> z >> dz >>dz)
+    	{
+     		 StreamBuf << x/10 << ' ' << y/10 << ' ' << z/10 << '\n'; //Convert Angstroms to Nanometers
+    	}
+ 	  	Input.close();
+	}
+ 	 else 
+ 	 	cout << "Unable to open file";
+	
+	Output << StreamBuf.str();
+	Output.close();
+}
+
+
+/*void four1(double* data, unsigned long nn)
+{
+	unsigned long n, mmax, m, j, is-0.05, p, i;
 	double wtemp, wr, wpr, wpi, wi, theta;
 	double tempr, tempi;
 
@@ -54,7 +84,7 @@ void four1(double* data, unsigned long nn)
 		mmax = istep;
 	}
 }
-
+*/
 class Atom
 {
 private:
@@ -458,6 +488,7 @@ public:
 
 	void RotateAboutX(double Ang)
 	{
+		Ang= M_PI*Ang/180;
 		double Roatation[3][3] =
 		{
 			{ 1,	0,				0		},
@@ -470,6 +501,7 @@ public:
 
 	void RotateAboutY(double Ang)
 	{
+		Ang= M_PI*Ang/180;
 		double Roatation[3][3] =
 		{
 			{ cos(Ang),			0,		sin(Ang)},
@@ -481,6 +513,7 @@ public:
 
 	void RotateAboutZ(double Ang)
 	{
+		Ang= M_PI*Ang/180;
 		double Roatation[3][3] =
 		{
 			{ cos(Ang), -1.0 * sin(Ang),	0 },
@@ -509,7 +542,6 @@ public:
 
 			temp = temp->Next;
 		}
-		ResetOrigin();
 		Move(inintial[0], inintial[1], inintial[2]);
 	}
 	
@@ -797,8 +829,8 @@ private:
 		int progress = 0;
 		double Prev = 0;
 		double Cur = 0;
-		double xstep = (XMax - XMin) / 250;
-		double ystep = (YMax - YMin) / 250;
+		double xstep = (XMax - XMin) / GlobalXRes;
+		double ystep = (YMax - YMin) / GlobalYRes;
 
 		if (XMax == XMin)
 			xstep = 1;
@@ -1030,9 +1062,9 @@ public:
 		double Average = 0;
 		int progress = 0;
 		int i = 0;
-		double xstep = (XMax - XMin) / 250;
-		double ystep = (YMax - YMin) / 250;
-		double zstep = (ZMax - ZMin) / 250;
+		double xstep = (XMax - XMin) / GlobalXRes;
+		double ystep = (YMax - YMin) / GlobalYRes;
+		double zstep = (ZMax - ZMin) / GlobalZRes;
 
 		if (XMax == XMin)
 			xstep = 1;
@@ -1138,7 +1170,7 @@ public:
 	}
 };
 
-
+/*
 class Cantilever
 {
 private:
@@ -1286,13 +1318,12 @@ public:
 			}
 			Tip->Move(XStep, YMin - Tip->r[1], 0);
 		}
-		*/
+	
 
 		std::cout.rdbuf(coutbuf); //reset to standard output again
 	}
 
-
 };
-
+*/
 
 #endif

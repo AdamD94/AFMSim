@@ -54,6 +54,9 @@ void MoveFiles()
 	MoveFile(Tip_Filename, Defect_Filename, "Force_Curve.png", Setpoint, z_0, Ang, Defect_Present);
 	MoveFile(Tip_Filename, Defect_Filename, "Topology.png", Setpoint, z_0, Ang, Defect_Present);
 	MoveFile(Tip_Filename, Defect_Filename, "Derivative.png", Setpoint, z_0, Ang, Defect_Present);
+
+	MoveFile(Tip_Filename, Defect_Filename, "Topology.xyz", Setpoint, z_0, Ang, Defect_Present);
+
 }
 
 void Plot()
@@ -64,6 +67,8 @@ void Plot()
 	gp << "load 'Topology.plt' \n";
 	gp << "load 'Derivative.plt' \n";
 }
+
+
 
 
 int	main(int argc, char *argv[])
@@ -110,8 +115,8 @@ int	main(int argc, char *argv[])
 		cin>>Ang;
 		Defect_Filename = argv[2];
 		Defect->Import(Defect_Filename);
+		Defect->Move(((a1[0] * a1_cells + a2[0]*a2_cells)/2)-Tip->r[0], ((a1[1] * a1_cells + a2[1] * a2_cells) / 2) - Tip->r[1], 1 - Tip->r[0]);	
 		Defect->RotateAboutZ(Ang);
-		Defect->Move(((a1[0] * a1_cells + a2[0]*a2_cells)/2)-Tip->r[0], ((a1[1] * a1_cells + a2[1] * a2_cells) / 2) - Tip->r[1], 1 - Tip->r[0]);
 		Defect_Present = 1;
 		surface->Add_Defect(Defect);
 	}
@@ -124,16 +129,19 @@ int	main(int argc, char *argv[])
 	surface->Print();
 	Tip->Print_Atoms();
 
-/*	cout<<"Calculating Frequency Shift"<<endl;
+/*
+	cout<<"Calculating Frequency Shift"<<endl;
 	Cantilever* Cant = new Cantilever(400E-6, 30E-6, 3.7E-6, 200 * pow(10, 9), 3184, Tip, surface);
 	Cant->FM_Scan(surface, 1);
 	gp << "load 'Transform.plt' \n";
 	
 	cout<<"Frequency calculation complete"<<endl;
-*/	
+*/
 
 	surface->TipHeight(Tip, Setpoint, ZStep, FRes, 5);
 	cout << "Topology complete" << endl;
+
+	write_gsf("Topology.dat");
 
 	surface->ForceCurve(Tip, z_0, z_0 + 1);
 	cout << "Force curve complete" << endl;
@@ -142,11 +150,10 @@ int	main(int argc, char *argv[])
 	surface->SurfaceForce(Tip, z_0, 5);
 	cout << "Surface force complete" << endl;
 
+
 	Plot();
 
-
 	MoveFiles();
-
 
 	clock_t toc = clock(); // Read in current clock cycle, subtract and divide by clock frequency for time elapsed in seconds
 	cout << "Simulation Complete \nElapsed: " << (double)(toc - tic) / CLOCKS_PER_SEC << "  seconds" << endl;

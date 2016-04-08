@@ -34,11 +34,11 @@ void write_gsf(string Filename)
 }
 
 
-/*void four1(double* data, unsigned long nn)
+void four1(double* data, unsigned long nn)
 {
-	unsigned long n, mmax, m, j, is-0.05, p, i;
-	double wtemp, wr, wpr, wpi, wi, theta;
-	double tempr, tempi;
+	unsigned long n, mmax, m, j, istep, i;
+    double wtemp, wr, wpr, wpi, wi, theta;
+    double tempr, tempi;
 
 	// reverse-binary reindexing
 	n = nn << 1;
@@ -84,7 +84,7 @@ void write_gsf(string Filename)
 		mmax = istep;
 	}
 }
-*/
+
 class Atom
 {
 private:
@@ -1170,7 +1170,7 @@ public:
 	}
 };
 
-/*
+
 class Cantilever
 {
 private:
@@ -1284,46 +1284,11 @@ public:
 		{
 			cout << k / conv << " " << sqrt(pow(ft[k], 2) + pow(ft[k + 1], 2)) << endl;
 		}
-
-
-		Z_0 = Tip->r[2];
 		
-		/*
-		while (Z_0 > 4)
-		{
-			z = { 0 , 0 };
-			Tip->Move(XMin - Tip->r[0], YMin - Tip->r[1], Z_0 - Tip->r[2]);
-			i = 0;
-			integrate_adaptive(make_controlled(1E-12, 1E-6, stepper_type()),
-				std::bind(&Cantilever::Oscillate, *this, pl::_1, pl::_2, pl::_3), z, 0.0, 150 / f_0, 0.005 / f_0, std::bind(&Cantilever::Write_Oscillation, *this, pl::_1, pl::_2));
-			cout << "\n";
-			printf("\rZ_0: %f", (Z_0));
-			fflush( stdout );		
-
-			Z_0 -= 0.005;
-		}
-		*/
-
-		/*
-		while (Tip->r[0] < XMax)
-		{
-			while (Tip->r[1] < YMax)
-			{
-				z = { Tip->r[2] , 0 };
-
-				integrate_adaptive(make_controlled(1E-12, 1E-12, stepper_type()),
-				std::bind(&Cantilever::Oscillate, *this, pl::_1, pl::_2, pl::_3), z, 1.0, 10.0, 0.1, std::bind(&Cantilever::Write_Oscillation, *this, pl::_1, pl::_2));
-
-				Tip->Move(0, YStep, 0);
-			}
-			Tip->Move(XStep, YMin - Tip->r[1], 0);
-		}
-	
-
 		std::cout.rdbuf(coutbuf); //reset to standard output again
 	}
 
 };
-*/
+
 
 #endif

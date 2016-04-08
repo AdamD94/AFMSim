@@ -427,9 +427,10 @@ public:
 
 			while (fin >> element >> x >> y >> z)
 			{
-				cout << "Atom " << setw(2) << i << ": " << element << endl;
 				i++;
 				Temp = new Atom(x,y,z,element);
+				cout << "Atom " << setw(2) << i << ": " << Temp->element << "\tSigma: " <<Temp->s<< "\tEpsilon: " <<Temp->e<<endl;
+
 				Add_Atom(Temp);
 			}
 		}

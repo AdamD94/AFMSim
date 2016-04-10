@@ -1,4 +1,5 @@
 #include "Var.h"
+#include "AFMSim.h"
 
 
 void MoveFile(string Tipname, string Defectname, string Filename, double ID1, double ID2, double ID3, bool DefectPresent)
@@ -56,7 +57,6 @@ void MoveFiles()
 	MoveFile(Tip_Filename, Defect_Filename, "Derivative.png", Setpoint, z_0, Ang, Defect_Present);
 
 	MoveFile(Tip_Filename, Defect_Filename, "Topology.xyz", Setpoint, z_0, Ang, Defect_Present);
-
 }
 
 void Plot()
@@ -70,24 +70,22 @@ void Plot()
 
 
 
-
 int	main(int argc, char *argv[])
 {
 
-	if (argc < 2)
+	if (argc < 2) //Check for simulation call without parmeters
 	{
-		cout << "Incorrect number of arguments, call AFMSim <Tip Filename> <Defect Filename (optional)>" << endl;
-		cin.ignore();
+		cout << "Error: Incorrect number of arguments\nCall AFMSim <TipFilename> <DefectFilename>(optional)" << endl;
 		return(0);
 	}
 	
 	Tip_Filename = argv[1];
 	cout << "Tip: " << Tip_Filename << endl;
 
-	cout << "Enter Force Setpoint (nN):" << endl; //Height of tip above sample is set by user
+	cout << "Enter Force Setpoint (nN):" << endl; //Force to be followed to generate topologyu
 	cin >> Setpoint;
 
-	cout << "Enter Height for surface force (Angstroms):" << endl; //Height of tip above sample is set by user
+	cout << "Enter Height for surface force (Angstroms):" << endl; //Initial height of tip above sample is set by user
 	cin >> z_0;
 
 	clock_t tic = clock();	// Read in current clock cycle
@@ -101,11 +99,12 @@ int	main(int argc, char *argv[])
 	Tip->ResetOrigin();
 	Tip->Move(0 - Tip->r[0], 0 - Tip->r[1], z_0 - Tip->r[2]);
 	
-	Unit_Cell* simple_cell = new Unit_Cell();	// Unit cell to be tiled over the crystal
-	simple_cell->Add_Atom(Carbon1);			// Constiuent atoms of unit cells
+	Unit_Cell* simple_cell = new Unit_Cell();			// Unit cell to be tiled over the crystal
+	simple_cell->Add_Atom(Carbon1);						// Constiuent atoms of unit cells
 	simple_cell->Add_Atom(Carbon2);
 
-	Surface* surface = new Surface(a1, a2, a3, a1_cells, a2_cells, a3_cells, simple_cell);	//Surface generation, unit cell is tiled over space in the directions defined by a1,a2,a3
+	//Surface generation, unit cell is tiled over space in the directions defined by a1,a2,a3
+	Surface* surface = new Surface(a1, a2, a3, a1_cells, a2_cells, a3_cells, simple_cell);
 	if (argc > 2)
 	{
 		cout << "Enter defect rotation:" << endl;
@@ -135,23 +134,21 @@ int	main(int argc, char *argv[])
 	cout<<"Frequency calculation complete"<<endl;
 */
 
-	surface->TipHeight(Tip, Setpoint, ZStep, FRes, 5);
+	surface->TipHeight(Tip, Setpoint, ZStep, FRes, 5); //generates AFM-like topology
 	cout << "Topology complete" << endl;
 
-	write_gsf("Topology.dat");
+	write_gsf("Topology.dat");							//Writes gwyddion-compatible file
 
-	surface->ForceCurve(Tip, z_0, z_0 + 1);
+	surface->ForceCurve(Tip, z_0, z_0 + 1);				//Generate x-z force data
 	cout << "Force curve complete" << endl;
 
-
-	surface->SurfaceForce(Tip, z_0, 5);
+	surface->SurfaceForce(Tip, z_0, 5);					//Generate x-y force data
 	cout << "Surface force complete" << endl;
 
+	Plot();												//Call Gnuplot
 
-	Plot();
-
-	MoveFiles();
-
+	MoveFiles();										//Store results in folder structure
+														//Generate folder structure if necessary
 	clock_t toc = clock(); // Read in current clock cycle, subtract and divide by clock frequency for time elapsed in seconds
 	cout << "Simulation Complete \nElapsed: " << (double)(toc - tic) / CLOCKS_PER_SEC << "  seconds" << endl;
 	return(0);

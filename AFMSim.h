@@ -1,14 +1,17 @@
 #ifndef AFMSim
 #define AFMSim
 
+using namespace boost::numeric::odeint;
+typedef boost::array< double, 2 > state_type;
+typedef runge_kutta_cash_karp54< state_type > stepper_type;
 double ft[2048];
 double z_prev = 0;
 
-int GlobalXRes = 500;
+int GlobalXRes = 250;
 int GlobalYRes = 250;
 int GlobalZRes = 250;
-const int LookupSize =64;
 
+const int LookupSize =128;
 double lookup[LookupSize][LookupSize][2] = {0};
 
 void write_gsf(string Filename)
@@ -95,26 +98,25 @@ private:
 	double temp;
 	double e_mod;
 	double s_mod;
-	int element_index=0;
 
 	void populate_lookup()
 	{
-		if(lookup[element_index][element_index][0]!=0)
+		if(lookup[Atomic_Number][Atomic_Number][0]!=0)
 			return;
 
 		else
 		{
-			lookup[element_index][element_index][0]=e;
-			lookup[element_index][element_index][1]=s;
+			lookup[Atomic_Number][Atomic_Number][0]=e;
+			lookup[Atomic_Number][Atomic_Number][1]=s;
 
 			for(int i=0; i<LookupSize; i++)
 			{
-				if(lookup[i][i][0]!=0 && i != element_index)
+				if(lookup[i][i][0]!=0 && i != Atomic_Number)
 				{
-					lookup[element_index][i][0] =   sqrt(lookup[element_index][element_index][0]*lookup[i][i][0]);
-					lookup[element_index][i][1] =  		(lookup[element_index][element_index][1]+lookup[i][i][1])/2;
-					lookup[i][element_index][0] =   lookup[element_index][i][0];
-					lookup[i][element_index][1] =   lookup[element_index][i][1];
+					lookup[Atomic_Number][i][0] =   sqrt(lookup[Atomic_Number][Atomic_Number][0]*lookup[i][i][0]);
+					lookup[Atomic_Number][i][1] =  		(lookup[Atomic_Number][Atomic_Number][1]+lookup[i][i][1])/2;
+					lookup[i][Atomic_Number][0] =   lookup[Atomic_Number][i][0];
+					lookup[i][Atomic_Number][1] =   lookup[Atomic_Number][i][1];
 				}
 			}
 		}
@@ -124,9 +126,8 @@ public:
 	double r[3];
 	double	e;
 	double	s;
+	int Atomic_Number=0;
 	string element;
-
-	
 	Atom* Next;
 
 	Atom(double x_in, double y_in, double z_in, string element_in)
@@ -138,53 +139,55 @@ public:
 
 		if (element.compare("C") == 0)
 			{
-				element_index=0;
-				e = 1.0456*pow(10, -21);	//epsilon	[Joules]	(LJ Parameter) 
-				s = 4.0;					//sigma		[Angstroms] (LJ Parameter) 
+				Atomic_Number=6;
+				e = 1.0456*pow(10, -21);		//epsilon	[Joules]	(LJ Parameter) 
+				s = 4.0;						//sigma		[Angstroms] (LJ Parameter) 
 			}
 			else if (element.compare("Pt") == 0)
 			{
-				element_index=1;
+				Atomic_Number=78;
 				e = 8.3304*pow(10, -20);		//epsilon	[Joules]	(LJ Parameter) 
 				s = 2.475;						//sigma		[Angstroms] (LJ Parameter) 
 			}
 
 			else if (element.compare("N") == 0)
 			{
-				element_index=2;
+				Atomic_Number=7;
 				e = 8.1111631*pow(10, -21);		//epsilon	[Joules]	(LJ Parameter) 
 				s = 3.5;						//sigma		[Angstroms] (LJ Parameter) 
 			}
 
 			else if (element.compare("O") == 0)
 			{
-				element_index=3;
+				Atomic_Number=8;
 				e = 1.38953*pow(10, -21);		//epsilon	[Joules]	(LJ Parameter) 
 				s = 3.20;						//sigma		[Angstroms] (LJ Parameter) 
 			}
 
 			else if (element.compare("S") == 0)
 			{
-				element_index=4;
+				Atomic_Number=16;
 				e = 1.38953*pow(10, -21);		//epsilon	[Joules]	(LJ Parameter) 
 				s = 4.00;						//sigma		[Angstroms] (LJ Parameter) 
 			}
 
 			else if (element.compare("H") == 0)
 			{
-				element_index=5;
+				Atomic_Number=1;
 				e = 1.38953*pow(10, -22);		//epsilon	[Joules]	(LJ Parameter) 
 				s = 2.00;						//sigma		[Angstroms] (LJ Parameter) 
 			}
 
 			else
 			{
-				element_index=0;
 				cout << "Lennard jones parameters not stored for: " << element << ". Assuming Carbon"<< endl;
 				element = "C";
+
+				Atomic_Number=8;
 				e = 1.0456*pow(10, -21);	//epsilon	[Joules]	(LJ Parameter) 
 				s = 4.0;	
 			}
+
 		populate_lookup();
 		Next = NULL;
 	}
@@ -220,11 +223,11 @@ public:
 
 
 		temp = Dist(Other_Atom);
-		if (temp > (2.5 * lookup[element_index][Other_Atom->element_index][1])) 		// Truncation outside critical range
+		if (temp > (2.5 * lookup[Atomic_Number][Other_Atom->Atomic_Number][1])) 		// Truncation outside critical range
 			return 0;
 
-		e_mod= lookup[element_index][Other_Atom->element_index][0];
-		s_mod= lookup[element_index][Other_Atom->element_index][1];
+		e_mod= lookup[Atomic_Number][Other_Atom->Atomic_Number][0];
+		s_mod= lookup[Atomic_Number][Other_Atom->Atomic_Number][1];
 
 		const double LJ_Truncation = 4 * e_mod *(pow((s_mod / (3 * s_mod)), 12) - pow((s_mod / (3 * s_mod)), 6));
 
@@ -234,11 +237,11 @@ public:
 	double LJForce(Atom* Other_Atom)
 	{
 		temp = Dist(Other_Atom);
-		if (temp > (2.5 * lookup[element_index][Other_Atom->element_index][1])) 		// Truncation outside critical range
+		if (temp > (2.5 * lookup[Atomic_Number][Other_Atom->Atomic_Number][1])) 		// Truncation outside critical range
 			return 0;
 
-		e_mod= lookup[element_index][Other_Atom->element_index][0];
-		s_mod= lookup[element_index][Other_Atom->element_index][1];
+		e_mod= lookup[Atomic_Number][Other_Atom->Atomic_Number][0];
+		s_mod= lookup[Atomic_Number][Other_Atom->Atomic_Number][1];
 
 		const double LJ_Truncation = (24 / (3*s_mod))*e_mod*(2 * pow((s_mod / (3 * s_mod)), 12)- pow((s_mod / (3 * s_mod)), 6))*pow(10, 19);
 
@@ -419,7 +422,7 @@ public:
 		fin.close();
 
 		fin.open(xyz_filename);
-
+		i=0;
 		if (fin.is_open())
 		{
 			getline(fin, line);
@@ -429,7 +432,7 @@ public:
 			{
 				i++;
 				Temp = new Atom(x,y,z,element);
-				cout << "Atom " << setw(2) << i << ": " << Temp->element << "\tSigma: " <<Temp->s<< "\tEpsilon: " <<Temp->e<<endl;
+				cout << "Atom " << setw(2) << i << ": " << Temp->element << "\tZ= " <<Temp->Atomic_Number<<endl;
 
 				Add_Atom(Temp);
 			}
@@ -807,7 +810,7 @@ private:
 
 		double original_position[3] = { Obj_in->r[0], Obj_in->r[1], Obj_in->r[2] };
 
-		cout << "x[Å]\t" << "y[Å]\t" << "z[Å]\t" << "dz\t" << endl;
+		cout << "x[Angstroms]\t" << "y[Angstroms]\t" << "z[Angstroms]\t" << "dz\t" << endl;
 
 		Obj_in->Move(XMin - Obj_in->r[0], YMin - Obj_in->r[1], ZIni - Obj_in->r[2]);
 
@@ -873,7 +876,6 @@ private:
 		}
 		return(Obj_in->r[2]);
 	}
-
 
 public:
 
@@ -1044,7 +1046,7 @@ public:
 		
 		double original_position[3] = { Obj_in->r[0], Obj_in->r[1], Obj_in->r[2] };
 
-		cout << "x[Å]\t" << "y[Å]\t" << "z[Å]\t" << "F[nN]\t" << endl;
+		cout << "x[Angstroms]\t" << "y[Angstroms]\t" << "z[Angstroms]\t" << "F[nN]\t" << endl;
 
 		Obj_in->Move(XMin - Obj_in->r[0], YMin - Obj_in->r[1], ZMin - Obj_in->r[2]);
 
@@ -1158,8 +1160,6 @@ public:
 	double Z_0;
 	int i = 0;
 	const int transient = 1000;
-
-
 	VestaObject* Tip;
 	Surface* Surf;
 
@@ -1256,6 +1256,5 @@ public:
 	}
 
 };
-
 
 #endif

@@ -1,11 +1,7 @@
 #locations plot
-
-  
-unset palette
-
 set size ratio -1
 set origin -0.033, 0
-
+unset palette
 unset cblabel
 set xlabel 'x [Å]'
 set ylabel 'y [Å]'

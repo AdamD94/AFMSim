@@ -2,6 +2,7 @@
 #define AFMSim
 
 const int LookupSize =128;
+//Lookup table to be populated with Lennard-Jones parameters
 double lookup[LookupSize][LookupSize][2] = {0};
 
 int GlobalXRes = 500;
@@ -10,17 +11,16 @@ int GlobalZRes = 250;
 
 void write_xyz(string Filename)
 {
-    string NewFile = Filename.substr(0,Filename.find_last_of(".")).append(".xyz");
-    string line;
-    fstream Input(Filename);
+	double x, y, z, dz;
+    string   NewFile = Filename.substr(0,Filename.find_last_of(".")).append(".xyz");
+    string   line;
+    fstream  Input(Filename);
     ofstream Output(NewFile);
     stringstream StreamBuf;
-    double x, y, z, dz;
 
-    if (Input.is_open())
+    if (Input.is_open()) //skip header line
     {
         getline (Input,line);
-
         while ( Input >> x >> y >> z >> dz >>dz)
             StreamBuf << x/10 << ' ' << y/10 << ' ' << z/10 << '\n'; //Convert Angstroms to Nanometers
 
@@ -56,9 +56,9 @@ private:
                 if(lookup[i][i][0]!=0 && i != Atomic_Number)
                 {
                     lookup[Atomic_Number][i][0] =   sqrt(lookup[Atomic_Number][Atomic_Number][0]*lookup[i][i][0]);
-                    lookup[Atomic_Number][i][1] =			(lookup[Atomic_Number][Atomic_Number][1]+lookup[i][i][1])/2;
-                    lookup[i][Atomic_Number][0] =   lookup[Atomic_Number][i][0];
-                    lookup[i][Atomic_Number][1] =   lookup[Atomic_Number][i][1];
+                    lookup[Atomic_Number][i][1] =		(lookup[Atomic_Number][Atomic_Number][1]+lookup[i][i][1])/2;
+                    lookup[i][Atomic_Number][0] =   	 lookup[Atomic_Number][i][0];
+                    lookup[i][Atomic_Number][1] =   	 lookup[Atomic_Number][i][1];
                 }
             }
         }
@@ -127,7 +127,7 @@ public:
             element = "C";
             Atomic_Number=8;
             e = 1.0456*pow(10, -21);	//epsilon	[Joules]	(LJ Parameter)
-            s = 4.0;
+            s = 4.0;					//sigma		[Angstroms] (LJ Parameter)
         }
 
         populate_lookup();
@@ -160,10 +160,10 @@ public:
         return (double)  sqrt(pow((Other_Atom->r[2] - r[2]), 2) + pow((Other_Atom->r[1] - r[1]), 2) + pow((Other_Atom->r[0] - r[0]), 2));
     }
 
-    double LJPot(Atom* Other_Atom)
+    double LJPot(Atom* Other_Atom) // Calculate interaptomic potemtial
     {
         temp = Dist(Other_Atom);
-        if (temp > (3 * lookup[Atomic_Number][Other_Atom->Atomic_Number][1])) 		// Truncation outside critical range
+        if (temp > (3 * lookup[Atomic_Number][Other_Atom->Atomic_Number][1])) 	// Truncation outside critical range
             return 0;
 
         e_mod= lookup[Atomic_Number][Other_Atom->Atomic_Number][0];
@@ -174,10 +174,10 @@ public:
         return (double)	 4 * e_mod *(pow((s_mod /temp), 12) - pow((s_mod / temp), 6)) - LJ_Truncation;
     }
 
-    double LJForce(Atom* Other_Atom)
+    double LJForce(Atom* Other_Atom) // Calculate interatomic force
     {
         temp = Dist(Other_Atom);
-        if (temp > (3 * lookup[Atomic_Number][Other_Atom->Atomic_Number][1])) 		// Truncation outside critical range
+        if (temp > (3 * lookup[Atomic_Number][Other_Atom->Atomic_Number][1])) 	// Truncation outside critical range
             return 0;
 
         e_mod= lookup[Atomic_Number][Other_Atom->Atomic_Number][0];
@@ -188,7 +188,7 @@ public:
         return (double) (24 / temp)*e_mod*(2 * pow((s_mod / temp), 12) -  pow((s_mod / temp), 6))*pow(10, 19); //- LJ_Truncation;
     }
 
-    double PerpLJForce(Atom* Other_Atom)
+    double PerpLJForce(Atom* Other_Atom) // Calculate interatomic force lying in z direction
     {
         return (double) LJForce(Other_Atom)*(abs(Other_Atom->r[2]-r[2]))/(Dist(Other_Atom));
     }
@@ -296,7 +296,7 @@ public:
         return (double)sqrt(pow((Other_Atom->r[2] - r[2]), 2) + pow((Other_Atom->r[1] - r[1]), 2) + pow((Other_Atom->r[0] - r[0]), 2));
     }
 
-    void Import(string filename_in)
+    void Import(string filename_in) //Import vesta object from .vesta AND .xyz file
     {
         string line;
         string vesta_filename = filename_in;
@@ -311,7 +311,7 @@ public:
         double rotation2[3][3] =
         {
             { 1,	0,	 0},
-            { 0,	0, -1},
+            { 0,	0, 	-1},
             { 0,	1,	 0},
         };
 
@@ -398,9 +398,9 @@ public:
         Ang= M_PI*Ang/180;
         double Roatation[3][3] =
         {
-            { 1,	0,			 			0			},
+            { 1,		0,				0		},
             { 0,	cos(Ang),	-1.0 *sin(Ang)	},
-            { 0,	sin(Ang),			cos(Ang)	},
+            { 0,	sin(Ang),		  cos(Ang)	},
 
         };
         Rotate(Roatation);
@@ -411,9 +411,9 @@ public:
         Ang= M_PI*Ang/180;
         double Roatation[3][3] =
         {
-            { 	cos(Ang),		0,		sin(Ang)	},
-            { 	0,					1,		0			},
-            { -1.0*sin(Ang),	0,		cos(Ang)	},
+            { cos(Ang),			0,		sin(Ang) },
+            { 0,				1,		0		 },
+            { sin(Ang)*-1.0,	0,		cos(Ang) },
         };
         Rotate(Roatation);
     }
@@ -425,7 +425,7 @@ public:
         {
             { cos(Ang),	-1.0*	sin(Ang),	0 },
             { sin(Ang),			cos(Ang),	0 },
-            { 0,						0,			1 },
+            { 0,				0,			1 },
         };
         Rotate(Roatation);
     }
@@ -452,7 +452,7 @@ public:
         Move(inintial[0], inintial[1], inintial[2]);
     }
 
-    void ResetOrigin()
+    void ResetOrigin() //Set lowest point on tip as coordinate
     {
         Atom* temp = atom;
         double r_min[3] = {0, 0, 1000000};
@@ -490,7 +490,7 @@ public:
         atom = temp;
     }
 
-    void Move(double x_in, double y_in, double z_in)
+    void Move(double x_in, double y_in, double z_in) //Move tip by x,y,z
     {
         Atom* temp = atom;
         while (temp != NULL)
@@ -674,7 +674,7 @@ private:
     Unit_Cell* first_cell;
 
 
-    void Tile_Space()
+    void Tile_Space() //Fill space with empty unit cells until surface of desired size is generated
     {
         Unit_Cell* temp_cell;
         for (int k = 0; k < a3_cells; k++)
@@ -696,7 +696,7 @@ private:
         }
     }
 
-    void Fill_Tiled_Space(Unit_Cell* Cell_in)
+    void Fill_Tiled_Space(Unit_Cell* Cell_in) //Fill empty unit cells with atoms as in Cell_in
     {
         Unit_Cell* temp_cell = first_cell;
         Atom* temp_atom = Cell_in->first_atom;
@@ -731,6 +731,7 @@ private:
         first_cell = temp_cell;
     }
 
+    //Control loop ajusting tip height until desired force is found, similar to real AFM operation
     void TipHeightMap(VestaObject* Obj_in, double XMax, double XMin, double YMax, double YMin, double ZIni, double Setpoint, double ZStep, double FRes)
     {
         int progress = 0;
@@ -778,6 +779,7 @@ private:
         Obj_in->Move(original_position[0] - Obj_in->r[0], original_position[1] - Obj_in->r[1], original_position[2] - Obj_in->r[2]);
     }
 
+    //Function responsible for chosing direction of tip movement in control loop
     double TipHeightCalc(VestaObject* Obj_in, double Setpoint, double ZStep, double FRes)
     {
         double Error = 100000;
@@ -865,7 +867,7 @@ public:
         std::cout.rdbuf(coutbuf); //reset to standard output again
     }
 
-    double LJPot(VestaObject* Obj_in)
+    double LJPot(VestaObject* Obj_in) //Calculate potential between tip and surface
     {
         Unit_Cell* temp = first_cell;
         double LJPot = 0;
@@ -878,7 +880,7 @@ public:
         return LJPot;
     }
 
-    double LJForce(VestaObject* Obj_in)
+    double LJForce(VestaObject* Obj_in) //Calculate Force between tip and surface
     {
 
 
@@ -893,7 +895,7 @@ public:
         return Force;
     }
 
-    double PerpLJForce(VestaObject* Obj_in)
+    double PerpLJForce(VestaObject* Obj_in) //Calculate force between tip and surface in z direction
     {
         Unit_Cell* temp = first_cell;
         double Force = 0;
@@ -906,6 +908,7 @@ public:
         return Force;
     }
 
+    //Select area to be scanned for topology measurement
     void TipHeight(VestaObject* Obj_in, double Setpoint, double ZRes, double FRes, double Area)
     {
         double XMax = round(((a1[0] * a1_cells + a2[0] * a2_cells) / 2 + Area * (abs(a1[0]) + abs(a2[0]))));
@@ -925,6 +928,7 @@ public:
         std::cout.rdbuf(coutbuf); //reset to standard output again
     }
 
+    //Select area to be scanned for XY Plane force measurement
     void SurfaceForce(VestaObject* Obj_in, double z_0, double Area)
     {
         double XMax = round((a1[0] * a1_cells + a2[0] * a2_cells) / 2 + Area * (abs(a1[0]) + abs(a2[0])));
@@ -944,6 +948,7 @@ public:
         std::cout.rdbuf(coutbuf); //reset to standard output again
     }
 
+    //Select area to be scanned for XZ Plane force measurement
     void ForceCurve(VestaObject* Obj_in, double ZMin, double ZMax)
     {
 
@@ -963,6 +968,7 @@ public:
         std::cout.rdbuf(coutbuf); //reset to standard output again
     }
 
+    //Function used to scan tip over a volume, called by Forcecurve() and SurfaceForce()
     void XYZForce(VestaObject* Obj_in, double XMax, double XMin, double YMax, double YMin, double ZMax, double ZMin, bool Corrugation)
     {
         double Average = 0;
@@ -1041,7 +1047,7 @@ public:
         Obj_in->Move(original_position[0] - Obj_in->r[0], original_position[1] - Obj_in->r[1], original_position[2] - Obj_in->r[2]);
     }
 
-    void Add_Defect(Unit_Cell* Defect_Cell)
+    void Add_Defect(Unit_Cell* Defect_Cell) //Add vesta object to surface
     {
         Unit_Cell* Temp=first_cell;
         while (first_cell->Next != NULL)
@@ -1077,9 +1083,7 @@ public:
     }
 };
 
-
-
-
+//Work in progress, not yet correct beyond this point
 class Cantilever
 {
 private:

@@ -1,5 +1,4 @@
 #pragma once
-
 #define _USE_MATH_DEFINES
 
 #include <stdio.h>
@@ -31,14 +30,13 @@ double a 			= 1.4;
 double c 			= 6.71;
 double z_0			= 4;
 double ZStep		= 0.001;
-double FRes			= 0.001;		//Tolerance on force measurement
+double FRes			= 0.001;	//Tolerance on force measurement
 double Setpoint 	= 0;		//Force to be followed by tip nanoNewtons
 double Ang			= 0;
-double a1[3] 		= { a* 3.0 / 2.0	, a * sqrt(3.0) / 2.0	,a*  0.0 };	// Lattice vectors as in crystallagraphy
-double a2[3] 		=	{ a* 3.0 / 2.0	, a *-sqrt(3.0) / 2.0	,a*  0.0 };
-double a3[3]		= { a				, 0							,c* -1.0 };
+double a1[3] 		= { a* 3.0 / 2.0	, a * sqrt(3.0) / 2.0	,a*  0.0 };	// Lattice vectors as in crystallography
+double a2[3] 		= { a* 3.0 / 2.0	, a *-sqrt(3.0) / 2.0	,a*  0.0 };
+double a3[3]		= { a				, 0						,c* -1.0 };
 
 string Defect_Filename 	="";
-string Tip_Filename 		="";
-string Functionalise		="";
-
+string Tip_Filename 	="";
+string Functionalise	="";

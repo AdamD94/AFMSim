@@ -6,8 +6,8 @@ const int LookupSize =128;
 double lookup[LookupSize][LookupSize][2] = {0};
 
 int GlobalXRes = 500;
-int GlobalYRes = 250;
-int GlobalZRes = 250;
+int GlobalYRes = 500;
+int GlobalZRes = 500;
 
 void write_xyz(string Filename)
 {
@@ -912,9 +912,9 @@ public:
     void TipHeight(VestaObject* Obj_in, double Setpoint, double ZRes, double FRes, double Area)
     {
         double XMax = round(((a1[0] * a1_cells + a2[0] * a2_cells) / 2 + Area * (abs(a1[0]) + abs(a2[0]))));
-        double XMin = round(((a1[0] * a1_cells + a2[0] * a2_cells) / 2 - Area * (abs(a1[0]) + abs(a2[0]))));
+        double XMin = round(((a1[0] * a1_cells + a2[0] * a2_cells) / 2 - Area * (abs(a1[0]) + abs(a2[0])))-0.5);
         double YMax = round(((a1[1] * a1_cells + a2[1] * a2_cells) / 2 + Area * (abs(a1[1]) + abs(a2[1]))));
-        double YMin = round(((a1[1] * a1_cells + a2[1] * a2_cells) / 2 - Area * (abs(a1[1]) + abs(a2[1]))));
+        double YMin = round(((a1[1] * a1_cells + a2[1] * a2_cells) / 2 - Area * (abs(a1[1]) + abs(a2[1])))-0.5);
         std::stringstream buffer;
         std::ofstream out("Topology.dat");
 
@@ -931,10 +931,10 @@ public:
     //Select area to be scanned for XY Plane force measurement
     void SurfaceForce(VestaObject* Obj_in, double z_0, double Area)
     {
-        double XMax = round((a1[0] * a1_cells + a2[0] * a2_cells) / 2 + Area * (abs(a1[0]) + abs(a2[0])));
-        double XMin = round((a1[0] * a1_cells + a2[0] * a2_cells) / 2 - Area * (abs(a1[0]) + abs(a2[0])));
-        double YMax = round((a1[1] * a1_cells + a2[1] * a2_cells) / 2 + Area * (abs(a1[1]) + abs(a2[1])));
-        double YMin = round((a1[1] * a1_cells + a2[1] * a2_cells) / 2 - Area * (abs(a1[1]) + abs(a2[1])));
+        double XMax = round(((a1[0] * a1_cells + a2[0] * a2_cells) / 2 + Area * (abs(a1[0]) + abs(a2[0]))));
+        double XMin = round(((a1[0] * a1_cells + a2[0] * a2_cells) / 2 - Area * (abs(a1[0]) + abs(a2[0])))-0.5);
+        double YMax = round(((a1[1] * a1_cells + a2[1] * a2_cells) / 2 + Area * (abs(a1[1]) + abs(a2[1]))));
+        double YMin = round(((a1[1] * a1_cells + a2[1] * a2_cells) / 2 - Area * (abs(a1[1]) + abs(a2[1])))-0.5);
         std::stringstream buffer;
         std::ofstream out("Surface.dat");
 
@@ -949,11 +949,10 @@ public:
     }
 
     //Select area to be scanned for XZ Plane force measurement
-    void ForceCurve(VestaObject* Obj_in, double ZMin, double ZMax)
+    void ForceCurve(VestaObject* Obj_in, double ZMin, double ZMax, double len)
     {
-
-        double XMax = round((((a1_cells / 2) + 0.75)*a1[0] + ((a2_cells / 2) + 0.75)*a2[0]));
-        double XMin = round((((a1_cells / 2) - 1.25)*a1[0] + ((a2_cells / 2) - 1.25)*a2[0]));
+        double XMax = round(((a1[0] * a1_cells + a2[0] * a2_cells) / 2 + len * (abs(a1[0]) + abs(a2[0]))));
+        double XMin = round(((a1[0] * a1_cells + a2[0] * a2_cells) / 2 - len * (abs(a1[0]) + abs(a2[0])))-0.5);
         double Y = 0;
         std::stringstream buffer;
         std::ofstream out("Force_Curve.dat");

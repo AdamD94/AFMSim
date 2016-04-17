@@ -48,8 +48,10 @@ void MoveFiles()
 
 	MoveFile(Tip_Filename, Defect_Filename, "Surface.png", 		Setpoint, z_0, Ang, Defect_Present);
 	MoveFile(Tip_Filename, Defect_Filename, "Force_Curve.png", 	Setpoint, z_0, Ang, Defect_Present);
+	MoveFile(Tip_Filename, Defect_Filename, "Combination.png",	Setpoint, z_0, Ang, Defect_Present);
 	MoveFile(Tip_Filename, Defect_Filename, "Topology.png", 	Setpoint, z_0, Ang, Defect_Present);
 	MoveFile(Tip_Filename, Defect_Filename, "Derivative.png",	Setpoint, z_0, Ang, Defect_Present);
+
 
 	MoveFile(Tip_Filename, Defect_Filename, "Topology.xyz", 	Setpoint, z_0, Ang, Defect_Present);
 }
@@ -57,6 +59,7 @@ void MoveFiles()
 void Plot()
 {
 	Gnuplot gp;
+	gp << "load 'Combination.plt' \n";
 	gp << "load 'Force_Curve.plt' \n";
 	gp << "load 'Surface.plt' \n";
 	gp << "load 'Topology.plt' \n";
@@ -136,10 +139,10 @@ int	main(int argc, char *argv[])
 
 	write_xyz("Topology.dat");							// Writes gwyddion-compatible file
 
-	surface->ForceCurve(Tip, z_0, z_0 + 1);				// Generate x-z force data
+	surface->ForceCurve(Tip, z_0, z_0 + 1, 1);				// Generate x-z force data
 	cout << "Force curve complete" << endl;
 
-	surface->SurfaceForce(Tip, z_0, 2);					// Generate x-y force data
+	surface->SurfaceForce(Tip, z_0, 1);					// Generate x-y force data
 	cout << "Surface force complete" << endl;
 
 	Plot();						// Call Gnuplot

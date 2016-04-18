@@ -1,3 +1,12 @@
+
+//**********************************************************************//
+//	Atomic Force Microscope simulation (Var.h)							//
+//	Author: Adam Dempsey (DCU)											//
+//	Reuse of this code is welcome and modifications are encouraged		//
+//	The latest version of this code can be found at:					//
+//			https://github.com/AdamD94/AFMSim							//
+//**********************************************************************//
+
 #pragma once
 #define _USE_MATH_DEFINES
 

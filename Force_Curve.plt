@@ -8,6 +8,9 @@ set palette model RGB defined (0 "dark-blue", 2 "blue",4 "light-blue",5 "light-g
 set size ratio -5
 set origin -0.033, 0
 
+set xtics
+set ytics
+
 unset cblabel
 set xlabel 'x [Å]'
 set ylabel 'z [Å]'

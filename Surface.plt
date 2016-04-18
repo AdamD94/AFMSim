@@ -7,12 +7,13 @@ set palette model RGB defined (0 "dark-blue", 2 "blue",4 "light-blue",5 "light-g
 
 set size ratio -1
 
-set cblabel 'F [nN]'
-
-unset xlabel
-unset ylabel
 unset border
-unset xtics
-unset ytics
+
+set cblabel 'F [nN]'
+set xlabel 'x [Å]'
+set ylabel 'y [Å]'
+set xtics
+set ytics
+
 set pm3d map interpolate 2,2
 splot 'Surface.dat' using 1:2:4:4 notitle palette

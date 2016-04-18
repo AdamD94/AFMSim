@@ -13,6 +13,8 @@ unset colorbox
 unset cblabel
 set cblabel 'z [Å]'
 
+unset xlabel
+unset ylabel
 unset xtics
 unset ytics
 unset border

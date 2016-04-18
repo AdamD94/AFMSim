@@ -1,5 +1,15 @@
+
+//**********************************************************************//
+//	Atomic Force Microscope simulation (AFMSim.cpp)						//
+//	Author: Adam Dempsey (DCU)											//
+//	Reuse of this code is welcome and modifications are encouraged		//
+//	The latest version of this code can be found at:					//
+//			https://github.com/AdamD94/AFMSim							//
+//**********************************************************************//
+
 #include "Var.h"
 #include "AFMSim.h"
+
 
 //Generate folder strucure, rename and store generated data
 void MoveFile(string Tipname, string Defectname, string Filename, double ID1, double ID2, double ID3, bool DefectPresent)
@@ -134,7 +144,7 @@ int	main(int argc, char *argv[])
 	surface->Print();
 	Tip->Print_Atoms();
 
-	surface->TipHeight(Tip, Setpoint, ZStep, FRes, 5); 	// generates AFM-like topology
+	surface->TipHeight(Tip, Setpoint, ZStep, FRes, 2); 	// generates AFM-like topology
 	cout << "Topology complete" << endl;
 
 	write_xyz("Topology.dat");							// Writes gwyddion-compatible file

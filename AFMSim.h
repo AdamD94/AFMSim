@@ -1,3 +1,12 @@
+
+//**********************************************************************//
+//  Atomic Force Microscope simulation (AFMSim.h)                       //
+//  Author: Adam Dempsey (DCU)                                          //
+//  Reuse of this code is welcome and modifications are encouraged      //
+//  The latest version of this code can be found at:                    //
+//          https://github.com/AdamD94/AFMSim                           //
+//**********************************************************************//
+
 #ifndef AFMSim
 #define AFMSim
 
@@ -88,7 +97,7 @@ public:
         else if (element.compare("Pt") == 0)
         {
             Atomic_Number=78;
-            e = 8.3304*pow(10, -20);		//epsilon	[Joules]	(LJ Parameter)
+            e = 0.835*pow(10, -21); 		//epsilon	[Joules]	(LJ Parameter)
             s = 2.475;						//sigma		[Angstroms] (LJ Parameter)
         }
 

@@ -10,3 +10,7 @@ AFM tips and surfaces can be imported from a crystallographic program, Vesta: ht
 Data is plotted with gnuplot automatically as long as gnuplot is installed: http://www.gnuplot.info/
 
 Topology data is saved in a format that can be oppened with Gwyddion http://gwyddion.net/
+
+Note, this program has dependencies on the boost library.
+This library can be installed on linux with the following command.
+sudo apt-get install libboost-all-dev
